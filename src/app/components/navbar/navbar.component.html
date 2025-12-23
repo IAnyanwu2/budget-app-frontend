@@ -1,0 +1,38 @@
+<nav class="navbar" aria-label="Main navigation">
+    <a class="brand" routerLink="/">
+        <i class="fa-solid fa-coins brand-logo-coin"></i>
+        <span class="brand-logo-text">Saavy</span>
+    </a>
+    <div class="nav-links">
+        <a routerLink="/" routerLinkActive="active" class="nav-link" aria-label="Dashboard">
+            <i class="fa-solid fa-house nav-icon"></i>
+            Dashboard
+        </a>
+        <a routerLink="/reports" routerLinkActive="active" class="nav-link" aria-label="Reports">
+            <i class="fa-solid fa-chart-simple nav-icon"></i>
+            Reports
+        </a>
+        <a routerLink="/settings" routerLinkActive="active" class="nav-link" aria-label="Settings">
+            <i class="fa-solid fa-gear nav-icon"></i>
+            Settings
+        </a>
+        <div class="dropdown" (click)="toggleDropdown()">
+            <a class="nav-link dropdown-toggle" [class.active]="isDropdownOpen" aria-label="Tools">
+                <i class="fa-solid fa-toolbox nav-icon"></i>
+                Tools
+                <i class="fa-solid fa-chevron-down dropdown-arrow" [class.rotated]="isDropdownOpen"></i>
+            </a>
+            <div class="dropdown-menu" [class.show]="isDropdownOpen">
+                <button class="dropdown-item" (click)="setBudgetGoal($event)">
+                    <i class="fa-solid fa-bullseye"></i> Set Budget Goal
+                </button>
+                <button class="dropdown-item" (click)="exportSummary($event)">
+                    <i class="fa-solid fa-download"></i> Export Summary
+                </button>
+                <button class="dropdown-item" (click)="connectBank($event)">
+                    <i class="fa-solid fa-university"></i> Connect Bank
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,108 @@
+<section class="settings">
+  <!-- Settings Content -->
+  <div class="content">
+    <h2><i class="fa-solid fa-gear"></i> Settings</h2>
+    <p>Manage your account settings and preferences</p>
+
+    <div class="settings-section">
+        <h3><i class="fa-solid fa-user"></i> Profile</h3>
+        <p>Update your personal information</p>
+        
+        <div *ngIf="!editingProfile">
+          <div class="profile-display">
+            <p><strong>Name:</strong> {{ currentUser?.firstName }} {{ currentUser?.lastName }}</p>
+            <p><strong>Email:</strong> {{ currentUser?.email }}</p>
+          </div>
+          <button (click)="editProfile()">Edit Profile</button>
+        </div>
+
+        <div *ngIf="editingProfile">
+          <form [formGroup]="profileForm" class="profile-edit-form">
+            <div class="form-row">
+              <label>
+                First Name:
+                <input type="text" formControlName="firstName" placeholder="Enter first name" />
+                <div *ngIf="profileForm.get('firstName')?.invalid && profileForm.get('firstName')?.touched" class="error-message">
+                  First name is required (min 2 characters)
+                </div>
+              </label>
+            </div>
+            
+            <div class="form-row">
+              <label>
+                Last Name:
+                <input type="text" formControlName="lastName" placeholder="Enter last name" />
+                <div *ngIf="profileForm.get('lastName')?.invalid && profileForm.get('lastName')?.touched" class="error-message">
+                  Last name is required (min 2 characters)
+                </div>
+              </label>
+            </div>
+            
+            <div class="form-row">
+              <label>
+                Email:
+                <input type="email" formControlName="email" placeholder="Enter email" />
+                <div *ngIf="profileForm.get('email')?.invalid && profileForm.get('email')?.touched" class="error-message">
+                  Valid email is required
+                </div>
+              </label>
+            </div>
+            
+            <div class="form-buttons">
+              <button type="button" (click)="saveProfile()" [disabled]="profileForm.invalid" class="save-btn">
+                <i class="fa-solid fa-check"></i> Save Profile
+              </button>
+              <button type="button" (click)="cancelProfileEdit()" class="cancel-btn">
+                <i class="fa-solid fa-times"></i> Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div *ngIf="profileSaveSuccess" class="save-success">
+          <i class="fa-solid fa-check"></i> Profile updated successfully!
+        </div>
+
+        <form [formGroup]="settingsForm">
+          <label>
+            <i class="fa-solid fa-envelope"></i> Enable Notifications
+            <input type="checkbox" formControlName="notifications"/>
+          </label>
+
+          <label>
+            <i class="fa-solid fa-coins"></i> Monthly Budget Limit:
+            <input type="number" formControlName="monthlyBudgetLimit" placeholder="Enter amount"/>
+          </label>
+
+          <label>
+            <i class="fa-solid fa-money-bill"></i> Currency:
+            <select formControlName="currency">
+                  <option value="USD">USD - US Dollar</option>
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="GBP">GBP - British Pound</option>
+              </select>
+          </label>
+
+          <label>
+            <i class="fa-solid fa-palette"></i> Theme:
+            <select formControlName="theme">
+                  <option value="light">Light Mode</option>
+                  <option value="dark">Dark Mode</option>
+              </select>
+          </label>
+        </form>
+        
+        <button class="save-btn" (click)="saveSettings()">
+          <i class="fa-solid fa-floppy-disk"></i> Save Changes
+        </button>
+        
+        <div *ngIf="saveSuccess" class="save-success">
+          <i class="fa-solid fa-check"></i> Settings saved successfully!
+        </div>
+    </div>
+  </div>
+</section> 
+        
+ 
+
+

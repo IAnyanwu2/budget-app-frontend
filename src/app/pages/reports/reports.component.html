@@ -1,0 +1,59 @@
+<section class="reports">
+  <div class="content">
+    <h1>📈 Financial Reports</h1>
+    <p>Detailed analysis of your spending habits and financial trends</p>
+
+    <div class="reports-grid">
+      <!-- Annual Trend Chart -->
+      <div class="chart-card full-width">
+        <div class="card-header">
+          <h2>Annual Financial Trend</h2>
+          <div class="controls">
+            <select [(ngModel)]="selectedYear" (change)="loadAnnualTrend()">
+              <option value="2024">2024</option>
+              <option value="2025" selected>2025</option>
+            </select>
+          </div>
+        </div>
+        <canvas #annualTrendChart></canvas>
+      </div>
+
+      <!-- Monthly Category Breakdown -->
+      <div class="chart-card">
+        <div class="card-header">
+          <h2>Monthly Category Breakdown</h2>
+          <div class="controls">
+            <select [(ngModel)]="selectedMonth" (change)="loadMonthlyBreakdown()">
+              <option *ngFor="let month of months" [value]="month">{{ month }}</option>
+            </select>
+          </div>
+        </div>
+        <canvas #categoryChart></canvas>
+      </div>
+
+      <!-- Spending Comparison -->
+      <div class="chart-card">
+        <div class="card-header">
+          <h2>Income vs Expenses</h2>
+        </div>
+        <canvas #comparisonChart></canvas>
+      </div>
+
+      <!-- Savings Rate -->
+      <div class="chart-card">
+        <div class="card-header">
+          <h2>Savings Rate Trend</h2>
+        </div>
+        <canvas #savingsChart></canvas>
+      </div>
+
+      <!-- Category Trends -->
+      <div class="chart-card full-width">
+        <div class="card-header">
+          <h2>Top Expense Categories Over Time</h2>
+        </div>
+        <canvas #categoryTrendChart></canvas>
+      </div>
+    </div>
+  </div>
+</section>

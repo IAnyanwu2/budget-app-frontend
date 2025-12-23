@@ -1,0 +1,41 @@
+<div class="app-container">
+  <!-- Navigation for authenticated users -->
+  <nav class="navbar" *ngIf="isAuthenticated">
+    <div class="navbar-brand">
+      <h1>Saavy</h1>
+    </div>
+    <div class="navbar-nav">
+      <a routerLink="/" class="nav-link" [class.active]="currentRoute === '/'">Dashboard</a>
+      <a routerLink="/reports" class="nav-link" [class.active]="currentRoute === '/reports'">Reports</a>
+      <a routerLink="/settings" class="nav-link" [class.active]="currentRoute === '/settings'">Settings</a>
+      <div class="dropdown">
+        <button class="nav-link dropdown-toggle" (click)="toggleDropdown($event)" [class.active]="isDropdownOpen" type="button">
+          <i class="fa-solid fa-toolbox"></i> Tools
+          <i class="fa-solid fa-chevron-down dropdown-arrow" [class.rotated]="isDropdownOpen"></i>
+        </button>
+        <div class="dropdown-menu" [class.show]="isDropdownOpen">
+          <button class="dropdown-item" (click)="setBudgetGoal($event)">
+            <i class="fa-solid fa-bullseye"></i> Set Budget Goal
+          </button>
+          <button class="dropdown-item" (click)="exportSummary($event)">
+            <i class="fa-solid fa-download"></i> Export Summary
+          </button>
+          <button class="dropdown-item" (click)="connectBank($event)">
+            <i class="fa-solid fa-university"></i> Connect Bank
+          </button>
+        </div>
+      </div>
+      <button (click)="logout()" class="logout-btn">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" [class.authenticated]="isAuthenticated">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Footer for non-authenticated users -->
+  <footer *ngIf="!isAuthenticated">
+    <p>&copy; 2025 Saavy</p>
+  </footer>
+</div>

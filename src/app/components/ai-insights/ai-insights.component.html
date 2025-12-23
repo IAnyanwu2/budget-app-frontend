@@ -1,0 +1,80 @@
+<div class="ai-insights-container">
+  <div class="header">
+    <h3><i class="fa-solid fa-robot"></i> AI Budget Insights</h3>
+    <button (click)="generateInsights()" [disabled]="loading" class="refresh-btn">
+      <span *ngIf="!loading"><i class="fa-solid fa-arrows-rotate"></i> Refresh</span>
+      <span *ngIf="loading">Analyzing...</span>
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>AI is analyzing your spending patterns...</p>
+  </div>
+
+  <div *ngIf="!loading && analysis" class="insights-content">
+    <!-- Overall Score -->
+    <div class="score-card">
+      <h4>Budget Health Score</h4>
+      <div class="score-circle">
+        <div class="score-value" [class.good]="analysis.overallScore >= 80" 
+             [class.fair]="analysis.overallScore >= 60 && analysis.overallScore < 80"
+             [class.poor]="analysis.overallScore < 60">
+          {{ analysis.overallScore }}
+        </div>
+        <div class="score-label">/ 100</div>
+      </div>
+      <p class="summary">{{ analysis.summary }}</p>
+    </div>
+
+    <!-- Insights Grid -->
+    <div class="insights-grid">
+      <div *ngFor="let insight of analysis.insights" 
+           class="insight-card" 
+           [class.high-priority]="insight.priority === 'high'"
+           [class.medium-priority]="insight.priority === 'medium'"
+           [class.low-priority]="insight.priority === 'low'">
+        <div class="insight-header">
+          <h5>{{ insight.category }}</h5>
+          <span class="priority-badge">{{ insight.priority }}</span>
+        </div>
+        <p class="insight-text">{{ insight.insight }}</p>
+        <div class="recommendation">
+          <strong><i class="fa-solid fa-lightbulb"></i> Recommendation:</strong>
+          <p>{{ insight.recommendation }}</p>
+        </div>
+        <div class="savings-potential">
+          <span class="savings-amount">{{ insight.potentialSavings | currency:'USD':'symbol':'1.2-2' }}/month</span>
+          <span class="savings-label">potential savings</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Tips -->
+    <div class="tips-section">
+      <h4><i class="fa-solid fa-lightbulb"></i> Personalized Tips</h4>
+      <div class="tips-grid">
+        <div *ngFor="let tip of personalizedTips" class="tip-card">
+          <i [class]="'fa-solid fa-' + tip.icon"></i>
+          <span class="tip-text">{{ tip.text }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Budget Goals -->
+    <div class="goals-section">
+      <h4>🎯 Suggested Budget Goals</h4>
+      <div class="goals-grid">
+        <div *ngFor="let goal of budgetGoals" class="goal-card">
+          <h5>{{ goal.goal }}</h5>
+          <div class="goal-target">{{ goal.target | currency:'USD':'symbol':'1.2-2' }}</div>
+          <div class="goal-timeframe">{{ goal.timeframe }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && !analysis" class="empty-state">
+    <p>Click "Refresh" to get AI-powered insights about your spending!</p>
+  </div>
+</div>

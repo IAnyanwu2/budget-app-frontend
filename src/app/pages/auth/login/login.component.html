@@ -1,0 +1,61 @@
+<section class="auth-page">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>🔐 Welcome Back</h1>
+        <p>Sign in to your Saavy account</p>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+        <div class="form-group">
+          <label for="email">📧 Email Address</label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="Enter your email"
+            [class.error]="email?.invalid && email?.touched"
+          />
+          <div *ngIf="email?.invalid && email?.touched" class="error-message">
+            <span *ngIf="email?.errors?.['required']">Email is required</span>
+            <span *ngIf="email?.errors?.['email']">Please enter a valid email</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">🔒 Password</label>
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            placeholder="Enter your password"
+            [class.error]="password?.invalid && password?.touched"
+          />
+          <div *ngIf="password?.invalid && password?.touched" class="error-message">
+            <span *ngIf="password?.errors?.['required']">Password is required</span>
+            <span *ngIf="password?.errors?.['minlength']">Password must be at least 6 characters</span>
+          </div>
+        </div>
+
+        <div *ngIf="error" class="error-banner" role="alert">
+          ⚠️ {{ error }}
+        </div>
+
+        <button 
+          type="submit" 
+          [disabled]="loginForm.invalid || loading"
+          class="auth-btn"
+        >
+          <span *ngIf="loading" class="spinner"></span>
+          {{ loading ? 'Signing In...' : '🚀 Sign In' }}
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p>Don't have an account? 
+          <a routerLink="/register" class="auth-link">Create one here</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

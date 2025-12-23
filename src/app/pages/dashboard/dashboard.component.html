@@ -1,0 +1,74 @@
+<section class="dashboard">
+  <!-- Dashboard Content -->
+  <div class="content">
+    <h2>Welcome to Your Budget Dashboard</h2>
+    <p>Track your expenses, view reports, and manage your finances.</p>
+
+    <div class="dashboard-main">
+      <!-- Budget Overview Chart -->
+      <div class="chart-container">
+        <div class="chart-header">
+          <h3>Budget Overview</h3>
+          <div class="chart-controls">
+            <button (click)="refresh()" class="refresh-btn">
+              <i class="fa-solid fa-arrows-rotate"></i> Refresh
+            </button>
+            <button routerLink="/reports" class="reports-btn">
+              <i class="fa-solid fa-chart-simple"></i> View Reports
+            </button>
+          </div>
+        </div>
+
+        <ng-container *ngIf="error; else chartContent">
+          <div class="error-message">
+            <strong>Error:</strong> {{ error }}
+            <button (click)="refresh()">Retry</button>
+          </div>
+        </ng-container>
+
+        <ng-template #chartContent>
+          <ng-container *ngIf="summary; else loadingChart">
+            <div class="chart-canvas-container">
+              <canvas #budgetChart></canvas>
+            </div>
+          </ng-container>
+          <ng-template #loadingChart>
+            <div class="loading-spinner"></div>
+          </ng-template>
+        </ng-template>
+      </div>
+
+      <!-- Summary Statistics -->
+      <div class="summary-stats" *ngIf="summary">
+        <div class="stat-card">
+          <div class="stat-label">Total Income</div>
+          <div class="stat-value income">{{ summary.income | currency }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Expenses</div>
+          <div class="stat-value expenses">{{ summary.expenses | currency }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Savings</div>
+          <div class="stat-value savings">{{ summary.savings | currency }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Net Income</div>
+          <div class="stat-value" [class.positive]="summary.income - summary.expenses >= 0"
+                [class.negative]="summary.income - summary.expenses < 0">
+            {{ summary.income - summary.expenses | currency }}
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Insights -->
+      <div class="ai-insights">
+        <h3>AI Insights & Recommendations</h3>
+        <div class="insights-content">
+          <app-ai-insights></app-ai-insights>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
