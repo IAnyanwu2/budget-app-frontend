@@ -40,6 +40,26 @@ Notes
 - If the backend AI endpoint is unavailable (404), the frontend will try `http://localhost:5232` (local Ollama proxy) as a fallback.
 - For production deployment, consider containerizing (Docker) and/or hosting the frontend statically (Netlify/Vercel) while hosting the API and LLM infra separately.
 
+Ollama / Model notes
+- This project can use a local Ollama instance and a small proxy at `http://localhost:5232` (see `server/ollama-proxy.js`).
+- If you prefer a hosted model instead of a local Ollama, you can use a cloud model (example names used in this repo: `gpt:oss` or `acula` — replace with the exact model name your provider exposes).
+
+Local Ollama quick install
+1. Install Ollama (https://ollama.ai) on your machine following their docs for your OS.
+2. Ensure the Ollama daemon/service is running and that the model you need is installed (e.g. `ollama pull gpt:oss` or `ollama pull acula`).
+3. Start the local proxy (from the frontend repo root):
+
+   node server/ollama-proxy.js
+
+   The proxy forwards frontend AI calls to the Ollama API. If you use a cloud model instead, set `environment.apiBaseUrl` to the cloud endpoint or update the proxy to forward to the cloud API.
+
+Cloud model option
+- Instead of running Ollama locally, you can configure the backend or the proxy to call a hosted LLM provider (OpenAI, Azure OpenAI, or other providers exposing `gpt:oss`-compatible models). Ensure you store API keys in environment variables or host secret stores and do NOT commit them.
+
+Health checks
+- Verify backend: `curl http://localhost:5231/api/health`
+- Verify proxy: `curl http://localhost:5232/api/health`
+
 Build for production
 
 1. Build the app:
