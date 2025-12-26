@@ -26,6 +26,18 @@
                 <button class="dropdown-item" (click)="setBudgetGoal($event)">
                     <i class="fa-solid fa-bullseye"></i> Set Budget Goal
                 </button>
+                <div class="category-editor" *ngIf="showCategoryEditor">
+                    <div class="category-row" *ngFor="let it of categoryBudgets; let i = index">
+                        <input [(ngModel)]="it.category" name="cat-{{i}}" placeholder="Category" />
+                        <input type="number" min="0" step="0.01" [(ngModel)]="it.amount" name="amt-{{i}}" />
+                        <button type="button" (click)="removeCategoryBudget(i)">Remove</button>
+                    </div>
+                    <div class="editor-actions">
+                        <button type="button" (click)="addCategoryBudget()">Add Category</button>
+                        <button type="button" (click)="saveCategoryBudgets($event)">Save</button>
+                        <button type="button" (click)="showCategoryEditor = false">Close</button>
+                    </div>
+                </div>
                 <button class="dropdown-item" (click)="exportSummary($event)">
                     <i class="fa-solid fa-download"></i> Export Summary
                 </button>
@@ -36,3 +48,5 @@
         </div>
     </div>
 </nav>
+
+<!-- inline category editor is displayed inside the Tools dropdown -->

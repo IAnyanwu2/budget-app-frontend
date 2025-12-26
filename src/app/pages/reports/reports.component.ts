@@ -5,6 +5,8 @@ import { TransactionService } from '../../services/transaction.service';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 Chart.register(...registerables);
+// Ensure chart text (axis ticks, labels) uses a light color for readability
+Chart.defaults.color = '#f2f2f7';
 
 @Component({
   selector: 'app-reports',
@@ -120,9 +122,13 @@ export class ReportsComponent implements AfterViewInit {
           legend: { position: 'top' }
         },
         scales: {
+          x: {
+            ticks: { color: '#f2f2f7' }
+          },
           y: {
             beginAtZero: true,
             ticks: {
+              color: '#f2f2f7',
               callback: function(value) {
                 return '$' + Number(value).toLocaleString();
               }
@@ -191,9 +197,11 @@ export class ReportsComponent implements AfterViewInit {
           title: { display: true, text: 'Income vs Expenses (Last 6 Months)' }
         },
         scales: {
+          x: { ticks: { color: '#f2f2f7' } },
           y: {
             beginAtZero: true,
             ticks: {
+              color: '#f2f2f7',
               callback: function(value) {
                 return '$' + Number(value).toLocaleString();
               }
@@ -208,7 +216,7 @@ export class ReportsComponent implements AfterViewInit {
     if (this.charts['savings']) this.charts['savings'].destroy();
     
     const ctx = this.savingsRef.nativeElement.getContext('2d');
-    const savingsRates = data.map(d => Number(((d.savings / d.income) * 100).toFixed(1)));
+    const savingsRates = data.map(d => Number((((d.savings / d.income) * 100).toFixed(1))));
     
     this.charts['savings'] = new Chart(ctx, {
       type: 'line',
@@ -229,10 +237,12 @@ export class ReportsComponent implements AfterViewInit {
           title: { display: true, text: 'Savings Rate Trend' }
         },
         scales: {
+          x: { ticks: { color: '#f2f2f7' } },
           y: {
             beginAtZero: true,
             max: 50,
             ticks: {
+              color: '#f2f2f7',
               callback: function(value) {
                 return value + '%';
               }
@@ -271,9 +281,11 @@ export class ReportsComponent implements AfterViewInit {
           title: { display: true, text: 'Category Spending Comparison' }
         },
         scales: {
+          x: { ticks: { color: '#f2f2f7' } },
           y: {
             beginAtZero: true,
             ticks: {
+              color: '#f2f2f7',
               callback: function(value) {
                 return '$' + Number(value).toLocaleString();
               }

@@ -1,4 +1,41 @@
-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+# Node
+node_modules/
+
+# Angular build / dist
+dist/
+/.angular/
+
+# Editor directories
+.vscode/
+.vs/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backend build artifacts
+/budget-app-backend/bin/
+/budget-app-backend/obj/
+
+# Terraform / large providers
+/Terr_Aws/
+/.terraform/
+
+# Android / mobile builds
+android/app/release/
+*.apk
+
+# Large executables and archives
+*.exe
+*.zip
+*.7z
+
+# Misc
+.env
+npm-debug.log*
+yarn-error.log
+package-lock.json# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
 # Compiled output
 /dist

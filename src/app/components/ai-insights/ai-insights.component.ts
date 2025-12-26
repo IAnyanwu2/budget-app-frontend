@@ -14,6 +14,9 @@ export class AiInsightsComponent implements OnInit {
   analysis: SpendingAnalysis | null = null;
   personalizedTips: Array<{icon: string, text: string}> = [];
   budgetGoals: Array<{goal: string, target: number, timeframe: string}> = [];
+  budgetGoalNum?: number;
+  progressPercent?: number;
+  alertMessage?: string;
 
   constructor(private aiInsightsService: AiInsightsService) {}
 
@@ -24,11 +27,41 @@ export class AiInsightsComponent implements OnInit {
 
   generateInsights() {
     this.loading = true;
-    this.aiInsightsService.generateInsights().subscribe({
+    const stored = localStorage.getItem('budgetGoal');
+    const budgetGoal = stored && !isNaN(Number(stored)) ? Number(stored) : undefined;
+    this.budgetGoalNum = budgetGoal;
+    // read per-category budgets if present (JSON object in localStorage under 'categoryBudget')
+    let categoryGoals: Record<string, number> | undefined;
+    const catRaw = localStorage.getItem('categoryBudget');
+    if (catRaw) {
+      try {
+        const parsed = JSON.parse(catRaw);
+        if (typeof parsed === 'object' && parsed !== null) {
+          categoryGoals = Object.fromEntries(Object.entries(parsed).map(([k,v]) => [k, Number(v)]));
+        }
+      } catch {}
+    }
+    this.aiInsightsService.generateInsights(budgetGoal, categoryGoals).subscribe({
       next: (analysis) => {
         this.analysis = analysis;
         this.personalizedTips = this.aiInsightsService.getPersonalizedTips(analysis);
-        this.budgetGoals = this.aiInsightsService.generateBudgetGoals(analysis.totalSpending, 500);
+        // Use user budget goal when generating suggested goals (fallback to 500)
+        this.budgetGoals = this.aiInsightsService.generateBudgetGoals(analysis.totalSpending, budgetGoal || 500);
+
+        // Compute progress toward budget goal (if available)
+        if (this.budgetGoalNum && this.budgetGoalNum > 0) {
+          this.progressPercent = Math.round((analysis.totalSpending / this.budgetGoalNum) * 100);
+          if (this.progressPercent >= 100) {
+            this.alertMessage = `You have exceeded your monthly budget goal by ${this.progressPercent - 100}%`;
+          } else if (this.progressPercent >= 90) {
+            this.alertMessage = `You're approaching your budget goal (${this.progressPercent}% used). Consider trimming spending.`;
+          } else {
+            this.alertMessage = undefined;
+          }
+        } else {
+          this.progressPercent = undefined;
+          this.alertMessage = undefined;
+        }
         this.loading = false;
       },
       error: (error) => {

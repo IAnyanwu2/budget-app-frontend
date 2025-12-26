@@ -10,6 +10,7 @@ export interface BudgetInsight {
   recommendation: string;
   priority: 'high' | 'medium' | 'low';
   potentialSavings: number;
+  suggestedBudget?: number;
 }
 
 export interface SpendingAnalysis {
@@ -25,8 +26,8 @@ export interface SpendingAnalysis {
   providedIn: 'root'
 })
 export class AiInsightsService {
-  // Use local dev proxy instead of calling Ollama directly
-  private readonly ollamaUrl = 'http://localhost:5232/api/ai-insights';
+  // Use configured API base URL so dev port can be changed via environment
+  private readonly ollamaUrl = `${environment.apiBaseUrl}/ai-insights`;
   private readonly apiUrl = `${environment.apiBaseUrl}/ai-insights`;
   private insightsSubject = new BehaviorSubject<SpendingAnalysis | null>(null);
   public insights$ = this.insightsSubject.asObservable();
@@ -36,7 +37,7 @@ export class AiInsightsService {
     private transactionService: TransactionService
   ) {}
 
-  generateInsights(): Observable<SpendingAnalysis> {
+  generateInsights(budgetGoal?: number, categoryGoals?: Record<string, number>): Observable<SpendingAnalysis> {
     return new Observable(observer => {
       // Get real transaction data first
       forkJoin({
@@ -47,7 +48,7 @@ export class AiInsightsService {
       }).subscribe({
         next: (data) => {
           // Analyze the real data and generate insights using Ollama
-          this.analyzeWithOllama(data).subscribe({
+          this.analyzeWithOllama(data, budgetGoal, categoryGoals).subscribe({
             next: (analysis) => {
               this.insightsSubject.next(analysis);
               observer.next(analysis);
@@ -71,11 +72,13 @@ export class AiInsightsService {
     });
   }
 
-  private analyzeWithOllama(transactionData: any): Observable<SpendingAnalysis> {
-    const prompt = this.buildAnalysisPrompt(transactionData);
+  private analyzeWithOllama(transactionData: any, budgetGoal?: number, categoryGoals?: Record<string, number>): Observable<SpendingAnalysis> {
+    const prompt = this.buildAnalysisPrompt(transactionData, budgetGoal, categoryGoals);
     
     const primaryModel = 'gpt-oss:120b-cloud';
     const fallbackModel = 'gpt-oss:120b-cloud';
+    // Local proxy fallback (started via `npm run ollama-proxy`)
+    const proxyUrl = 'http://localhost:5232/api/ai-insights';
 
     const makeRequest = (modelName: string) => ({
       model: modelName,
@@ -84,58 +87,72 @@ export class AiInsightsService {
       options: { temperature: 0.7, max_tokens: 1000 }
     });
 
-    // Try primary model first; on network failure, fall back to a known working model
-    return this.http.post<{response: string}>(this.ollamaUrl, makeRequest(primaryModel)).pipe(
-      map(response => {
-        const text = (response as any).response || '';
+    // Simpler, properly-typed flow:
+    const parseAndValidate = (resp: any): Observable<SpendingAnalysis> => {
+      const text = (resp as any)?.response || '';
+      const refusalPatterns = [/I\'m sorry,? I can\'t help/, /I cannot help with that/, /I can.?t help with that/, /I\'m sorry, but I can.?t help/gi];
+      if (refusalPatterns.some(rx => rx.test(text))) {
+        return throwError(() => new Error('Model refused the request'));
+      }
 
-        // Detect common refusal patterns from models and treat as failure so we can fallback
-        const refusalPatterns = [/I\'m sorry,? I can\'t help/, /I cannot help with that/, /I can.?t help with that/, /I\'m sorry, but I can.?t help/gi];
-        if (refusalPatterns.some(rx => rx.test(text))) {
-          throw new Error('Model refused the request');
-        }
-
-        try {
-          // Parse the AI response and convert to our SpendingAnalysis format
-          const parsed = this.parseOllamaResponse(text, transactionData);
-          // Validate the parsed structure
-          if (!this.isValidAnalysis(parsed)) {
-            throw new Error('Invalid analysis schema from model');
-          }
-          return parsed;
-        } catch (error) {
-          console.error('Failed to parse or validate Ollama response:', error);
-          // Bubble up error to trigger fallback in generateInsights
-          throw error;
-        }
-      }),
-      catchError(err => {
-        console.warn('Primary model request failed, attempting fallback model:', err);
-        // Try fallback model
-        return this.http.post<{response: string}>(this.ollamaUrl, makeRequest(fallbackModel)).pipe(
-          map(response => {
-            const text2 = (response as any).response || '';
-            try {
-              const parsed2 = this.parseOllamaResponse(text2, transactionData);
-              if (!this.isValidAnalysis(parsed2)) {
-                throw new Error('Invalid analysis schema from fallback model');
+      try {
+        const parsed = this.parseOllamaResponse(text, transactionData);
+        // Post-process priorities and suggested budgets using provided categoryGoals
+        if (categoryGoals && parsed && Array.isArray(parsed.insights)) {
+          parsed.insights = parsed.insights.map((ins: BudgetInsight) => {
+            const cat = ins.category || 'Uncategorized';
+            // find actual spending for this category
+            const catData = (transactionData.categoryBreakdown || []).find((c: any) => c.category?.toLowerCase() === cat.toLowerCase());
+            const spent = catData ? Number(catData.amount) : 0;
+            const goalForCat = Object.keys(categoryGoals).find(k => k.toLowerCase() === cat.toLowerCase());
+            if (goalForCat) {
+              const goalVal = Number(categoryGoals[goalForCat]);
+              ins.suggestedBudget = goalVal;
+              if (goalVal > 0 && spent > goalVal) {
+                ins.priority = 'high';
+                ins.recommendation = `Priority: Align with category budget. ${ins.recommendation}`;
               }
-              return parsed2;
-            } catch (error2) {
-              console.error('Failed to parse/validate fallback response:', error2);
-              return this.generateRuleBasedAnalysis(transactionData);
             }
-          }),
-          catchError(err2 => {
-            console.error('Fallback model request also failed:', err2);
-            return throwError(() => err2);
-          })
+            return ins;
+          });
+        }
+        if (!this.isValidAnalysis(parsed)) {
+          return throwError(() => new Error('Invalid analysis schema from model'));
+        }
+        return new Observable<SpendingAnalysis>(obs => { obs.next(parsed); obs.complete(); });
+      } catch (e) {
+        return throwError(() => e);
+      }
+    };
+
+    // Primary request against backend ai endpoint
+    return this.http.post<any>(this.ollamaUrl, makeRequest(primaryModel)).pipe(
+      switchMap(resp => parseAndValidate(resp)),
+      catchError(err => {
+        // If backend doesn't expose ai endpoint, try local proxy first
+        if (err && (err.status === 404 || err.status === 0)) {
+          return this.http.post<any>(proxyUrl, makeRequest(primaryModel)).pipe(
+            switchMap(proxyResp => parseAndValidate(proxyResp)),
+            catchError(proxyErr => {
+              // proxy failed -> try fallback model on backend
+              return this.http.post<any>(this.ollamaUrl, makeRequest(fallbackModel)).pipe(
+                switchMap(fbResp => parseAndValidate(fbResp)),
+                catchError(fbErr => throwError(() => fbErr))
+              );
+            })
+          );
+        }
+
+        // Otherwise try fallback model on backend
+        return this.http.post<any>(this.ollamaUrl, makeRequest(fallbackModel)).pipe(
+          switchMap(fbResp => parseAndValidate(fbResp)),
+          catchError(fbErr => throwError(() => fbErr))
         );
       })
     );
   }
 
-  private buildAnalysisPrompt(data: any): string {
+  private buildAnalysisPrompt(data: any, budgetGoal?: number, categoryGoals?: Record<string, number>): string {
     // Strongly frame as non-prescriptive habit-building analysis and require JSON-only output
     return `You are a neutral data analyst. Do NOT provide personal financial advice or prescriptive instructions.
 Only produce a JSON object (no surrounding text) that matches the schema exactly. If you must refuse, return a JSON object with {"refused": true, "reason": "<brief reason>"}.
@@ -144,6 +161,11 @@ Context:
 - Monthly Income: ${data.summary.income}
 - Monthly Expenses: ${data.summary.expenses}
 - Monthly Savings: ${data.summary.savings}
+
+${budgetGoal ? `User Budget Goal: ${budgetGoal} (monthly limit)` : ''}
+
+Category Budget Goals:
+${categoryGoals ? Object.entries(categoryGoals).map(([k,v]) => `- ${k}: ${v}`).join('\n') : 'None'}
 
 Expense categories:
 ${data.categoryBreakdown.map((cat: any) => `- ${cat.category}: ${cat.amount} (${cat.percentage}%)`).join('\n')}
@@ -159,12 +181,13 @@ Required Output Schema (JSON only):
   "overallScore": number, // 0-100, data-driven health score
   "summary": string, // concise data-focused summary
   "insights": [
-    {
+      {
       "category": string,
-      "insight": string, // observation about habits/patterns (no prescriptive language)
-      "recommendation": string, // framed as an optional experiment or habit to try (not advice)
+      "insight": string,
+      "recommendation": string,
       "priority": "high" | "medium" | "low",
-      "potentialSavings": number // estimated monthly savings if experiment succeeds
+      "potentialSavings": number,
+      "suggestedBudget": number // optional: suggested monthly budget for this category to help meet user goal
     }
   ]
 }

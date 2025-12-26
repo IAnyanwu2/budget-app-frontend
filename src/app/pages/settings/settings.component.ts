@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/auth';
 
@@ -13,7 +14,7 @@ interface UserSettings {
 
 @Component({
   selector: 'app-settings',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
 })
@@ -30,7 +31,6 @@ export class SettingsComponent implements OnInit {
   constructor(private fb: FormBuilder, private authService: AuthService) {
     this.settingsForm = this.fb.group({
       notifications: [true],
-      monthlyBudgetLimit: [null],
       currency: ['USD'],
       theme: ['light']
     });
@@ -46,6 +46,7 @@ export class SettingsComponent implements OnInit {
     this.loadSettings();
     this.loadCurrentUser();
   }
+  
 
   private loadCurrentUser() {
     this.currentUser = this.authService.getCurrentUser();

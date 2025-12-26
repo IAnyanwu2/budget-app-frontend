@@ -30,13 +30,21 @@ app.post('/api/ai-insights', async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      // no redirect
     });
 
-    const json = await resp.json();
+    // Read response as text first to be resilient to streamed/NDJSON or
+    // occasional non-JSON upstream responses. Try to parse JSON; if that
+    // fails, forward raw text and preserve upstream content-type when possible.
+    const upstreamText = await resp.text();
     console.log('[proxy] proxied response status:', resp.status);
-    // Return Ollama's JSON response directly
-    res.status(resp.status).json(json);
+    const upstreamContentType = resp.headers.get('content-type') || 'application/json';
+    try {
+      const parsed = JSON.parse(upstreamText);
+      res.status(resp.status).json(parsed);
+    } catch (parseErr) {
+      console.warn('[proxy] upstream response not valid JSON, forwarding raw text');
+      res.status(resp.status).set('Content-Type', upstreamContentType).send(upstreamText);
+    }
   } catch (err) {
     console.error('Proxy error:', err);
     res.status(500).json({ error: 'Proxy failed', detail: String(err) });

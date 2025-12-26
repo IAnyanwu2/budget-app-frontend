@@ -69,10 +69,7 @@
             <input type="checkbox" formControlName="notifications"/>
           </label>
 
-          <label>
-            <i class="fa-solid fa-coins"></i> Monthly Budget Limit:
-            <input type="number" formControlName="monthlyBudgetLimit" placeholder="Enter amount"/>
-          </label>
+          <!-- Monthly budget limit moved to Tools -> Set Budget Goal (per-category budgets available there) -->
 
           <label>
             <i class="fa-solid fa-money-bill"></i> Currency:
@@ -99,6 +96,8 @@
         <div *ngIf="saveSuccess" class="save-success">
           <i class="fa-solid fa-check"></i> Settings saved successfully!
         </div>
+        
+        <!-- Category budgets moved to Tools -> Set Budget Goal -->
     </div>
   </div>
 </section> 

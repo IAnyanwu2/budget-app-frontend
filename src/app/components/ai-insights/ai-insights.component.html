@@ -13,6 +13,19 @@
   </div>
 
   <div *ngIf="!loading && analysis" class="insights-content">
+    <!-- Budget Progress & Alerts -->
+    <div *ngIf="budgetGoalNum" class="budget-progress">
+      <div class="progress-header">
+        <strong>Budget Goal:</strong> {{ budgetGoalNum | currency:'USD':'symbol':'1.0-0' }}
+        <span class="progress-percent" *ngIf="progressPercent">{{ progressPercent }}% used</span>
+      </div>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" [style.width.%]="progressPercent || 0"></div>
+      </div>
+      <div *ngIf="alertMessage" class="budget-alert" [class.over]="(progressPercent || 0) >= 100">
+        {{ alertMessage }}
+      </div>
+    </div>
     <!-- Overall Score -->
     <div class="score-card">
       <h4>Budget Health Score</h4>
@@ -42,6 +55,7 @@
         <div class="recommendation">
           <strong><i class="fa-solid fa-lightbulb"></i> Recommendation:</strong>
           <p>{{ insight.recommendation }}</p>
+          <p *ngIf="insight.suggestedBudget" class="suggested-budget"><strong>Suggested budget:</strong> {{ insight.suggestedBudget | currency:'USD':'symbol':'1.0-0' }}/month</p>
         </div>
         <div class="savings-potential">
           <span class="savings-amount">{{ insight.potentialSavings | currency:'USD':'symbol':'1.2-2' }}/month</span>

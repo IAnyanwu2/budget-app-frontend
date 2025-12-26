@@ -1,39 +1,132 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { TransactionService } from '../../services/transaction.service';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, FormsModule],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss']
 })
 export class NavbarComponent {
   isDropdownOpen = false;
+  categoryBudgets: Array<{category: string, amount: number}> = [];
+  readonly CATEGORY_BUDGET_KEY = 'categoryBudget';
+  showBudgetModal = false;
+  showCategoryEditor = false; // show submenu in dropdown
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private transactionService: TransactionService, private elRef: ElementRef) {}
 
   @HostListener('document:click', ['$event'])
   closeDropdown(event: Event) {
-    this.isDropdownOpen = false;
+    // Only close when clicking outside this component
+    const target = event.target as Node | null;
+    if (!this.elRef.nativeElement.contains(target)) {
+      this.isDropdownOpen = false;
+      this.showCategoryEditor = false;
+    }
   }
 
   toggleDropdown() {
     this.isDropdownOpen = !this.isDropdownOpen;
   }
-
   setBudgetGoal(event: Event) {
     event.stopPropagation();
-    this.isDropdownOpen = false;
-    const goal = prompt('Enter your monthly budget goal (USD):');
-    if (goal && !isNaN(Number(goal))) {
-      localStorage.setItem('budgetGoal', goal);
-      alert(`Budget goal set to $${Number(goal).toLocaleString()}`);
-    } else if (goal !== null) {
-      alert('Please enter a valid number');
+    // Toggle category editor submenu inside the dropdown
+    this.showCategoryEditor = !this.showCategoryEditor;
+    if (this.showCategoryEditor) {
+      this.loadCategoriesAndBudgets();
     }
+  }
+
+  closeBudgetModal() {
+    this.showBudgetModal = false;
+  }
+
+  loadCategoryBudgets() {
+    const raw = localStorage.getItem(this.CATEGORY_BUDGET_KEY);
+    if (!raw) {
+      this.categoryBudgets = [];
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        this.categoryBudgets = Object.entries(parsed).map(([k, v]) => ({ category: k, amount: Number(v) }));
+      }
+    } catch (e) {
+      console.warn('Failed to parse category budgets:', e);
+      this.categoryBudgets = [];
+    }
+  }
+
+  private loadCategoriesAndBudgets() {
+    // Load live categories from TransactionService if available, then merge stored budgets
+    this.transactionService.getCategoryBreakdown().subscribe({
+      next: (cats) => {
+        const names = Array.isArray(cats) ? cats.map((c: any) => c.category) : [];
+        this.mergeCategoriesWithStored(names);
+      },
+      error: () => {
+        // fallback to stored or default categories
+        const raw = localStorage.getItem(this.CATEGORY_BUDGET_KEY);
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            this.categoryBudgets = Object.entries(parsed).map(([k, v]) => ({ category: k, amount: Number(v) }));
+            return;
+          } catch {}
+        }
+        this.categoryBudgets = [
+          { category: 'Food', amount: 0 },
+          { category: 'Transport', amount: 0 },
+          { category: 'Entertainment', amount: 0 }
+        ];
+      }
+    });
+  }
+
+  private mergeCategoriesWithStored(names: string[]) {
+    const storedRaw = localStorage.getItem(this.CATEGORY_BUDGET_KEY);
+    const stored: Record<string, number> = storedRaw ? JSON.parse(storedRaw) : {};
+    this.categoryBudgets = names.map(n => ({ category: n, amount: Number(stored[n] || 0) }));
+    // include any stored categories not in names
+    for (const k of Object.keys(stored)) {
+      if (!this.categoryBudgets.find(c => c.category === k)) {
+        this.categoryBudgets.push({ category: k, amount: Number(stored[k]) });
+      }
+    }
+  }
+
+  addCategoryBudget() {
+    this.categoryBudgets.push({ category: '', amount: 0 });
+  }
+
+  removeCategoryBudget(index: number) {
+    this.categoryBudgets.splice(index, 1);
+  }
+
+  saveCategoryBudgets(event: Event) {
+    event.stopPropagation();
+    const out: Record<string, number> = {};
+    for (const item of this.categoryBudgets) {
+      const name = (item.category || '').trim();
+      const amt = Number(item.amount);
+      if (!name) continue;
+      if (!isFinite(amt) || amt < 0) {
+        alert(`Invalid budget for category "${name}". Please enter a non-negative number.`);
+        return;
+      }
+      out[name] = Math.round(amt * 100) / 100;
+    }
+    localStorage.setItem(this.CATEGORY_BUDGET_KEY, JSON.stringify(out));
+    this.showCategoryEditor = false;
+    alert('Category budgets saved. AI insights will use these values.');
   }
 
   exportSummary(event: Event) {
