@@ -12,6 +12,7 @@ public interface IAuthService
     Task<AuthResponse?> RegisterAsync(RegisterRequest request);
     Task<User?> GetUserByEmailAsync(string email);
     Task<User?> GetUserByIdAsync(int userId);
+    Task<User?> UpdateProfileAsync(int userId, UpdateProfileRequest request);
 }
 
 public class AuthService : IAuthService
@@ -100,5 +101,23 @@ public class AuthService : IAuthService
     public async Task<User?> GetUserByIdAsync(int userId)
     {
         return await _context.Users.FindAsync(userId);
+    }
+
+    public async Task<User?> UpdateProfileAsync(int userId, UpdateProfileRequest request)
+    {
+        var user = await GetUserByIdAsync(userId);
+        if (user is null) return null;
+
+        var email = request.Email.Trim();
+        var emailInUse = await _context.Users.AnyAsync(existing =>
+            existing.Id != userId && existing.Email.ToLower() == email.ToLower());
+        if (emailInUse) return null;
+
+        user.FirstName = request.FirstName.Trim();
+        user.LastName = request.LastName.Trim();
+        user.Email = email;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return user;
     }
 }

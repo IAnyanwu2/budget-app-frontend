@@ -17,6 +17,12 @@ Thumbs.db
 # Backend build artifacts
 /budget-app-backend/bin/
 /budget-app-backend/obj/
+**/bin/
+**/obj/
+
+# Local SQLite databases and cloned API reference repository
+*.db
+/plaid-postman/
 
 # Terraform / large providers
 /Terr_Aws/

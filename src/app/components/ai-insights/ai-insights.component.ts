@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { AiInsightsService, SpendingAnalysis, BudgetInsight } from '../../services/ai-insights.service';
+import { UserPreferencesService } from '../../services/user-preferences.service';
 
 @Component({
   selector: 'app-ai-insights',
@@ -18,7 +19,10 @@ export class AiInsightsComponent implements OnInit {
   progressPercent?: number;
   alertMessage?: string;
 
-  constructor(private aiInsightsService: AiInsightsService) {}
+  constructor(
+    private aiInsightsService: AiInsightsService,
+    public preferences: UserPreferencesService
+  ) {}
 
   ngOnInit() {
     // Auto-generate insights on component load
@@ -45,8 +49,7 @@ export class AiInsightsComponent implements OnInit {
       next: (analysis) => {
         this.analysis = analysis;
         this.personalizedTips = this.aiInsightsService.getPersonalizedTips(analysis);
-        // Use user budget goal when generating suggested goals (fallback to 500)
-        this.budgetGoals = this.aiInsightsService.generateBudgetGoals(analysis.totalSpending, budgetGoal || 500);
+        this.budgetGoals = this.aiInsightsService.generateBudgetGoals(analysis.topCategories, categoryGoals);
 
         // Compute progress toward budget goal (if available)
         if (this.budgetGoalNum && this.budgetGoalNum > 0) {

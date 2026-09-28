@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, forkJoin, map, catchError, switchMap, throwError } from 'rxjs';
+import { Observable, BehaviorSubject, forkJoin, of, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { TransactionService } from './transaction.service';
 
@@ -20,15 +20,14 @@ export interface SpendingAnalysis {
   insights: BudgetInsight[];
   overallScore: number; // Out of 100
   summary: string;
+  source: 'ollama' | 'rules';
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AiInsightsService {
-  // Use configured API base URL so dev port can be changed via environment
-  private readonly ollamaUrl = `${environment.apiBaseUrl}/ai-insights`;
-  private readonly apiUrl = `${environment.apiBaseUrl}/ai-insights`;
+  private readonly analysisUrl = `${environment.apiBaseUrl}/ai-insights`;
   private insightsSubject = new BehaviorSubject<SpendingAnalysis | null>(null);
   public insights$ = this.insightsSubject.asObservable();
   
@@ -55,7 +54,6 @@ export class AiInsightsService {
               observer.complete();
             },
             error: (error) => {
-              console.error('Ollama analysis failed, using fallback:', error);
               // Fallback to rule-based analysis if Ollama fails
               const fallbackAnalysis = this.generateRuleBasedAnalysis(data);
               this.insightsSubject.next(fallbackAnalysis);
@@ -73,23 +71,9 @@ export class AiInsightsService {
   }
 
   private analyzeWithOllama(transactionData: any, budgetGoal?: number, categoryGoals?: Record<string, number>): Observable<SpendingAnalysis> {
-    const prompt = this.buildAnalysisPrompt(transactionData, budgetGoal, categoryGoals);
-    
-    const primaryModel = 'gpt-oss:120b-cloud';
-    const fallbackModel = 'gpt-oss:120b-cloud';
-    // Local proxy fallback (started via `npm run ollama-proxy`)
-    const proxyUrl = 'http://localhost:5232/api/ai-insights';
-
-    const makeRequest = (modelName: string) => ({
-      model: modelName,
-      prompt: prompt,
-      stream: false,
-      options: { temperature: 0.7, max_tokens: 1000 }
-    });
-
-    // Simpler, properly-typed flow:
-    const parseAndValidate = (resp: any): Observable<SpendingAnalysis> => {
-      const text = (resp as any)?.response || '';
+    return this.http.post<{ response: string }>(this.analysisUrl, { budgetGoal, categoryGoals }).pipe(
+      switchMap(resp => {
+        const text = resp?.response || '';
       const refusalPatterns = [/I\'m sorry,? I can\'t help/, /I cannot help with that/, /I can.?t help with that/, /I\'m sorry, but I can.?t help/gi];
       if (refusalPatterns.some(rx => rx.test(text))) {
         return throwError(() => new Error('Model refused the request'));
@@ -119,95 +103,16 @@ export class AiInsightsService {
         if (!this.isValidAnalysis(parsed)) {
           return throwError(() => new Error('Invalid analysis schema from model'));
         }
-        return new Observable<SpendingAnalysis>(obs => { obs.next(parsed); obs.complete(); });
+          return of(parsed);
       } catch (e) {
         return throwError(() => e);
       }
-    };
-
-    // Primary request against backend ai endpoint
-    return this.http.post<any>(this.ollamaUrl, makeRequest(primaryModel)).pipe(
-      switchMap(resp => parseAndValidate(resp)),
-      catchError(err => {
-        // If backend doesn't expose ai endpoint, try local proxy first
-        if (err && (err.status === 404 || err.status === 0)) {
-          return this.http.post<any>(proxyUrl, makeRequest(primaryModel)).pipe(
-            switchMap(proxyResp => parseAndValidate(proxyResp)),
-            catchError(proxyErr => {
-              // proxy failed -> try fallback model on backend
-              return this.http.post<any>(this.ollamaUrl, makeRequest(fallbackModel)).pipe(
-                switchMap(fbResp => parseAndValidate(fbResp)),
-                catchError(fbErr => throwError(() => fbErr))
-              );
-            })
-          );
-        }
-
-        // Otherwise try fallback model on backend
-        return this.http.post<any>(this.ollamaUrl, makeRequest(fallbackModel)).pipe(
-          switchMap(fbResp => parseAndValidate(fbResp)),
-          catchError(fbErr => throwError(() => fbErr))
-        );
       })
     );
   }
 
-  private buildAnalysisPrompt(data: any, budgetGoal?: number, categoryGoals?: Record<string, number>): string {
-    // Strongly frame as non-prescriptive habit-building analysis and require JSON-only output
-    return `You are a neutral data analyst. Do NOT provide personal financial advice or prescriptive instructions.
-Only produce a JSON object (no surrounding text) that matches the schema exactly. If you must refuse, return a JSON object with {"refused": true, "reason": "<brief reason>"}.
-
-Context:
-- Monthly Income: ${data.summary.income}
-- Monthly Expenses: ${data.summary.expenses}
-- Monthly Savings: ${data.summary.savings}
-
-${budgetGoal ? `User Budget Goal: ${budgetGoal} (monthly limit)` : ''}
-
-Category Budget Goals:
-${categoryGoals ? Object.entries(categoryGoals).map(([k,v]) => `- ${k}: ${v}`).join('\n') : 'None'}
-
-Expense categories:
-${data.categoryBreakdown.map((cat: any) => `- ${cat.category}: ${cat.amount} (${cat.percentage}%)`).join('\n')}
-
-Historical trends:
-${data.spendingTrend.map((trend: any) => `- ${trend.month}: Income ${trend.income}, Expenses ${trend.expenses}`).join('\n')}
-
-Recent activity (top 3):
-${data.recent.slice(0, 3).map((tx: any) => `- ${tx.description}: ${tx.amount} (${tx.category})`).join('\n')}
-
-Required Output Schema (JSON only):
-{
-  "overallScore": number, // 0-100, data-driven health score
-  "summary": string, // concise data-focused summary
-  "insights": [
-      {
-      "category": string,
-      "insight": string,
-      "recommendation": string,
-      "priority": "high" | "medium" | "low",
-      "potentialSavings": number,
-      "suggestedBudget": number // optional: suggested monthly budget for this category to help meet user goal
-    }
-  ]
-}
-
-Tone and constraints:
-- Use observational language (e.g., "observed", "suggested experiment", "possible impact") and avoid telling the user what they must do.
-- When offering a recommendation, present it as a voluntary experiment (e.g., "Experiment: try reducing X by Y% for Z weeks and observe savings of approximately $N").
-- Output JSON only — no explanatory paragraphs, no apologies, no safety policy text.
-`;
-  }
-
   private parseOllamaResponse(response: string, transactionData: any): SpendingAnalysis {
-    try {
-      // Try to extract JSON object from the response (models sometimes add text)
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON object found in model response');
-      }
-
-      const aiAnalysis = JSON.parse(jsonMatch[0]);
+    const aiAnalysis = JSON.parse(response.trim());
 
       // If model explicitly returned a refusal object, treat as refusal
       if ((aiAnalysis as any).refused) {
@@ -235,7 +140,8 @@ Tone and constraints:
           insight: it?.insight || (typeof it === 'string' ? it : ''),
           recommendation: it?.recommendation || '',
           priority: (it?.priority === 'high' || it?.priority === 'medium' || it?.priority === 'low') ? it.priority : 'low',
-          potentialSavings: typeof it?.potentialSavings === 'number' ? it.potentialSavings : 0
+          potentialSavings: typeof it?.potentialSavings === 'number' ? it.potentialSavings : 0,
+          suggestedBudget: typeof it?.suggestedBudget === 'number' ? it.suggestedBudget : undefined
         } as BudgetInsight;
       });
 
@@ -245,16 +151,11 @@ Tone and constraints:
         trends: transactionData.spendingTrend,
         overallScore: typeof aiAnalysis.overallScore === 'number' ? aiAnalysis.overallScore : 70,
         summary: aiAnalysis.summary || 'Analysis completed',
-        insights: normalizedInsights
+        insights: normalizedInsights,
+        source: 'ollama'
       };
 
       return result;
-    } catch (error) {
-      console.error('JSON parsing failed:', error);
-    }
-    
-    // Fallback if parsing fails
-    return this.generateRuleBasedAnalysis(transactionData);
   }
 
   private generateRuleBasedAnalysis(data: any): SpendingAnalysis {
@@ -308,7 +209,8 @@ Tone and constraints:
       summary: score >= 80 ? 'Your budget is healthy with room for optimization.' : 
                score >= 60 ? 'Your budget needs some attention in key areas.' :
                'Your budget requires significant improvement.',
-      insights: insights.slice(0, 3) // Limit to top 3 insights
+      insights: insights.slice(0, 3),
+      source: 'rules'
     };
   }
 
@@ -341,26 +243,30 @@ Tone and constraints:
     return tips.sort(() => Math.random() - 0.5).slice(0, 4);
   }
 
-  generateBudgetGoals(currentSpending: number, targetSavings: number): Array<{goal: string, target: number, timeframe: string}> {
-    const savingsGoal = targetSavings || 500;
-    const monthlyReduction = savingsGoal / 3; // Spread over 3 months
-    
-    return [
-      {
-        goal: 'Reduce food expenses',
-        target: monthlyReduction * 0.6,
-        timeframe: '30 days'
-      },
-      {
-        goal: 'Optimize transportation',
-        target: monthlyReduction * 0.3,
-        timeframe: '30 days'
-      },
-      {
-        goal: 'Cut entertainment spending',
-        target: monthlyReduction * 0.1,
-        timeframe: '30 days'
-      }
-    ];
+  generateBudgetGoals(
+    categories: SpendingAnalysis['topCategories'],
+    categoryGoals: Record<string, number> = {}
+  ): Array<{goal: string, target: number, timeframe: string}> {
+    return [...categories]
+      .filter(category => category.amount > 0)
+      .sort((first, second) => second.amount - first.amount)
+      .slice(0, 3)
+      .map(category => {
+        const configuredName = Object.keys(categoryGoals)
+          .find(name => name.toLowerCase() === category.category.toLowerCase());
+        const configuredLimit = configuredName ? Number(categoryGoals[configuredName]) : undefined;
+        const target = configuredLimit !== undefined && configuredLimit > 0
+          ? configuredLimit
+          : Math.round(category.amount * 0.9 * 100) / 100;
+        const label = category.category.replace(/[_-]+/g, ' ').toLowerCase();
+
+        return {
+          goal: configuredLimit !== undefined
+            ? `Stay within ${label} budget`
+            : `Try 10% less on ${label}`,
+          target,
+          timeframe: 'Next month'
+        };
+      });
   }
 }

@@ -1,74 +1,242 @@
-<section class="dashboard">
-  <!-- Dashboard Content -->
-  <div class="content">
-    <h2>Welcome to Your Budget Dashboard</h2>
-    <p>Track your expenses, view reports, and manage your finances.</p>
+<div class="dashboard">
 
-    <div class="dashboard-main">
-      <!-- Budget Overview Chart -->
-      <div class="chart-container">
-        <div class="chart-header">
-          <h3>Budget Overview</h3>
-          <div class="chart-controls">
-            <button (click)="refresh()" class="refresh-btn">
-              <i class="fa-solid fa-arrows-rotate"></i> Refresh
-            </button>
-            <button routerLink="/reports" class="reports-btn">
-              <i class="fa-solid fa-chart-simple"></i> View Reports
-            </button>
+  <!-- ── Full-Width Hero Banner ── -->
+  <header class="dash-hero">
+    <div class="hero-bg">
+      <div class="hero-grid"></div>
+      <div class="hero-orb hero-orb-1"></div>
+      <div class="hero-orb hero-orb-2"></div>
+      <div class="hero-orb hero-orb-3"></div>
+    </div>
+
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-pip"></span>
+          Live Dashboard
+        </div>
+        <h1 class="hero-title">Your Money,<br><span class="title-highlight">Simplified.</span></h1>
+        <p class="hero-sub">Track spending, uncover insights, and hit your goals — all in one place.</p>
+
+        <div class="hero-cta-row">
+          <button (click)="refresh()" [disabled]="refreshing" class="cta-btn cta-ghost" id="refresh-chart-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            {{ refreshing ? 'Syncing…' : 'Sync & Refresh' }}
+          </button>
+          <button routerLink="/reports" class="cta-btn cta-primary" id="view-reports-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            View Reports
+          </button>
+        </div>
+      </div>
+
+      <!-- Mini stat pills in hero -->
+      <div class="hero-stats" *ngIf="summary">
+        <div class="hero-stat">
+          <span class="hero-stat-label">Savings Rate</span>
+          <span class="hero-stat-val green">
+            {{ getSavingsRate() === null ? '—' : (getSavingsRate() | number:'1.0-1') + '%' }}
+          </span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-label">Net Income</span>
+          <span class="hero-stat-val" [class.green]="(summary.income - summary.expenses) >= 0" [class.red]="(summary.income - summary.expenses) < 0">
+            {{ summary.income - summary.expenses | currency:preferences.current.currency }}
+          </span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-label">Health Score</span>
+          <span class="hero-stat-val amber">{{ aiInsights?.analysis?.overallScore ?? '—' }}/100</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Stat Cards ── -->
+  <section class="stats-band">
+    <div class="stats-grid" *ngIf="summary">
+      <div class="stat-card income-card">
+        <div class="stat-card-top">
+          <div class="stat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <span class="stat-trend up">↑ this period</span>
+        </div>
+        <div class="stat-label">Total Income</div>
+        <div class="stat-value">{{ summary.income | currency:preferences.current.currency }}</div>
+        <div class="stat-bar"><div class="stat-bar-fill income-fill" [style.width.%]="100"></div></div>
+      </div>
+
+      <div class="stat-card expenses-card">
+        <div class="stat-card-top">
+          <div class="stat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+          </div>
+          <span class="stat-trend down">
+            {{ summary.income > 0 ? ((summary.expenses / summary.income * 100) | number:'1.0-0') + '% of income' : 'No income this month' }}
+          </span>
+        </div>
+        <div class="stat-label">Total Expenses</div>
+        <div class="stat-value">{{ summary.expenses | currency:preferences.current.currency }}</div>
+        <div class="stat-bar"><div class="stat-bar-fill expenses-fill" [style.width.%]="getExpensesPercent()"></div></div>
+      </div>
+
+      <div class="stat-card savings-card">
+        <div class="stat-card-top">
+          <div class="stat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <span class="stat-trend up">saved so far</span>
+        </div>
+        <div class="stat-label">Savings</div>
+        <div class="stat-value">{{ summary.savings | currency:preferences.current.currency }}</div>
+        <div class="stat-bar"><div class="stat-bar-fill savings-fill" [style.width.%]="getSavingsPercent()"></div></div>
+      </div>
+
+      <div class="stat-card net-card">
+        <div class="stat-card-top">
+          <div class="stat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <span class="stat-trend" [class.up]="summary.income - summary.expenses >= 0" [class.down]="summary.income - summary.expenses < 0">
+            {{ summary.income - summary.expenses >= 0 ? 'net positive' : 'net deficit' }}
+          </span>
+        </div>
+        <div class="stat-label">Net Income</div>
+        <div class="stat-value" [class.positive-val]="summary.income - summary.expenses >= 0" [class.negative-val]="summary.income - summary.expenses < 0">
+          {{ summary.income - summary.expenses | currency:preferences.current.currency }}
+        </div>
+        <div class="stat-bar">
+          <div class="stat-bar-fill net-fill" [style.width.%]="getSavingsPercent()"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skeleton -->
+    <div class="stats-grid skeleton-grid" *ngIf="!summary && !error">
+      <div class="stat-card skeleton-card" *ngFor="let i of [1,2,3,4]">
+        <div class="skel skel-sm"></div>
+        <div class="skel skel-lg"></div>
+        <div class="skel skel-bar"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Main two-column content ── -->
+  <section class="dash-body">
+
+    <!-- Left column: Chart -->
+    <div class="col-chart">
+      <div class="panel chart-panel">
+        <div class="panel-head">
+          <div class="panel-title-group">
+            <h2 class="panel-title">Budget Trend</h2>
+            <p class="panel-sub">Monthly income, expenses &amp; savings</p>
+          </div>
+          <div class="panel-legend">
+            <span class="legend-dot income-dot"></span><span>Income</span>
+            <span class="legend-dot expense-dot"></span><span>Expenses</span>
+            <span class="legend-dot savings-dot"></span><span>Savings</span>
           </div>
         </div>
 
         <ng-container *ngIf="error; else chartContent">
-          <div class="error-message">
-            <strong>Error:</strong> {{ error }}
+          <div class="panel-error">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <p>{{ error }}</p>
             <button (click)="refresh()">Retry</button>
           </div>
         </ng-container>
 
         <ng-template #chartContent>
           <ng-container *ngIf="summary; else loadingChart">
-            <div class="chart-canvas-container">
+            <div class="chart-wrap">
               <canvas #budgetChart></canvas>
             </div>
           </ng-container>
           <ng-template #loadingChart>
-            <div class="loading-spinner"></div>
+            <div class="chart-loading">
+              <div class="spinner"></div>
+              <span>Loading chart…</span>
+            </div>
           </ng-template>
         </ng-template>
       </div>
 
-      <!-- Summary Statistics -->
-      <div class="summary-stats" *ngIf="summary">
-        <div class="stat-card">
-          <div class="stat-label">Total Income</div>
-          <div class="stat-value income">{{ summary.income | currency }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Total Expenses</div>
-          <div class="stat-value expenses">{{ summary.expenses | currency }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Savings</div>
-          <div class="stat-value savings">{{ summary.savings | currency }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Net Income</div>
-          <div class="stat-value" [class.positive]="summary.income - summary.expenses >= 0"
-                [class.negative]="summary.income - summary.expenses < 0">
-            {{ summary.income - summary.expenses | currency }}
+      <!-- Quick actions strip -->
+      <div class="quick-actions">
+        <button (click)="setBudgetGoal()" class="qa-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          Set Goal
+        </button>
+        <button (click)="exportSummary()" class="qa-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+        <button (click)="connectBank()" class="qa-btn" [disabled]="connectingBank">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="22" x2="21" y2="22"/><polygon points="12 2 20 7 4 7"/></svg>
+          {{ connectingBank ? 'Connecting…' : 'Connect Bank' }}
+        </button>
+      </div>
+      <p *ngIf="connectionMessage" class="connection-message" role="status" aria-live="polite">
+        {{ connectionMessage }}
+      </p>
+
+      <!-- ── Recent Transactions (Moved to left column to fill space) ── -->
+      <div class="dash-transactions-embedded" style="margin-top: 2rem;">
+        <div class="panel tx-panel">
+          <div class="panel-head" style="margin-bottom: 1rem;">
+            <div>
+              <h2 class="panel-title">Recent Transactions</h2>
+              <p class="panel-sub">Your latest account activity</p>
+            </div>
+            <a routerLink="/reports" class="qa-btn" style="text-decoration: none;">View all &rarr;</a>
           </div>
+          
+          <div class="tx-list" *ngIf="recentTransactions.length > 0; else noTx">
+            <div class="tx-item" *ngFor="let tx of recentTransactions.slice(0, 5)">
+              <div class="tx-icon-wrap" [class.positive]="tx.amount > 0">
+                <svg *ngIf="tx.amount > 0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                <svg *ngIf="tx.amount <= 0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              </div>
+              <div class="tx-details">
+                <div class="tx-name">{{ tx.name || tx.description }}</div>
+                <div class="tx-category">{{ tx.date | date:'MMM d, y' }} • {{ tx.category }}</div>
+              </div>
+              <div class="tx-amount" [class.positive]="tx.amount > 0">
+                {{ tx.amount > 0 ? '+' : '' }}{{ tx.amount | currency:preferences.current.currency }}
+              </div>
+            </div>
+          </div>
+          
+          <ng-template #noTx>
+            <div class="tx-empty">
+              <p>No recent transactions found.</p>
+            </div>
+          </ng-template>
         </div>
       </div>
+    </div>
 
-      <!-- AI Insights -->
-      <div class="ai-insights">
-        <h3>AI Insights & Recommendations</h3>
-        <div class="insights-content">
+    <!-- Right column: AI Insights -->
+    <div class="col-insights">
+      <div class="panel ai-panel">
+        <div class="ai-panel-head">
+          <div class="ai-icon-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div>
+            <h2 class="panel-title light">AI Insights</h2>
+            <p class="panel-sub light">Personalised recommendations</p>
+          </div>
+        </div>
+        <div class="insights-body">
           <app-ai-insights></app-ai-insights>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
+</div>

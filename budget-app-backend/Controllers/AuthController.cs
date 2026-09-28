@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using budget_app_backend.DTOs;
 using budget_app_backend.Services;
 
@@ -68,7 +70,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("me")]
-    [Microsoft.AspNetCore.Authorization.Authorize]
+    [Authorize]
     public async Task<IActionResult> GetCurrentUser()
     {
         try
@@ -101,5 +103,34 @@ public class AuthController : ControllerBase
             _logger.LogError(ex, "Error getting current user");
             return StatusCode(500, new { message = "An error occurred" });
         }
+    }
+
+    [HttpPut("me")]
+    [Authorize]
+    public async Task<IActionResult> UpdateCurrentUser([FromBody] UpdateProfileRequest request)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdClaim == null || !int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var currentUser = await _authService.GetUserByIdAsync(userId);
+        if (currentUser is null) return NotFound();
+
+        var updatedUser = await _authService.UpdateProfileAsync(userId, request);
+        if (updatedUser is null)
+        {
+            return Conflict(new { message = "Email address is already in use." });
+        }
+
+        return Ok(new UserDto
+        {
+            Id = updatedUser.Id,
+            FirstName = updatedUser.FirstName,
+            LastName = updatedUser.LastName,
+            Email = updatedUser.Email,
+            CreatedAt = updatedUser.CreatedAt
+        });
     }
 }

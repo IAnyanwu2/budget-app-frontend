@@ -1,162 +1,491 @@
-/* Import modern font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-/* Import Font Awesome from package (works with Angular/Vite resolver) */
+/* Plaid-inspired Design System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
 @import "@fortawesome/fontawesome-free/css/all.min.css";
 
-/* Root variables for consistent theming */
+
+/* ============================================
+   DESIGN TOKENS — Plaid Color Palette
+   ============================================ */
 :root {
-  --font-main: 'Inter', 'Segoe UI', sans-serif;
-  --color-bg: #f5f7fa;           // Light neutral background
-  --color-text: #1a1a1a;         // Dark readable text
-  --color-primary: #eaeef3;      // Deep blue for accents
-  --color-secondary: #ffffff;    // White for cards and containers
-  --color-accent: #28a745;       // Green for success
-  --color-danger: #dc3545;       // Red for alerts
-  --color-muted: #6c757d;        // Gray for secondary text
-  --border-radius: 8px;
-  --shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  /* Core Brand */
+  --plaid-black:       #0c1931;   /* Plaid deep navy */
+  --plaid-navy:        #1a2744;   /* secondary dark */
+  --plaid-green:       #00c65e;   /* Plaid primary green */
+  --plaid-green-dark:  #00a84f;   /* hover green */
+  --plaid-white:       #ffffff;
+  --plaid-off-white:   #f6f8fc;   /* page background */
+  --plaid-surface:     #ffffff;   /* card surface */
+
+  /* Text */
+  --plaid-text-primary:   #0c1931;
+  --plaid-text-secondary: #5e6d82;
+  --plaid-text-muted:     #9aa5b4;
+  --plaid-text-on-dark:   #ffffff;
+  --plaid-text-on-dark-2: rgba(255,255,255,0.7);
+
+  /* Semantic */
+  --plaid-success:   #00c65e;
+  --plaid-danger:    #e03e3e;
+  --plaid-warning:   #f5a623;
+  --plaid-info:      #2b6cb0;
+
+  /* Borders & Shadows */
+  --plaid-border:         #e2e8f0;
+  --plaid-border-dark:    rgba(255,255,255,0.12);
+  --plaid-shadow-sm:      0 1px 3px rgba(12,25,49,0.08), 0 1px 2px rgba(12,25,49,0.04);
+  --plaid-shadow-md:      0 4px 16px rgba(12,25,49,0.12), 0 2px 4px rgba(12,25,49,0.06);
+  --plaid-shadow-lg:      0 10px 40px rgba(12,25,49,0.16), 0 4px 12px rgba(12,25,49,0.08);
+
+  /* Geometry */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+
+  /* Typography */
+  --font-main:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', sans-serif;
+
+  /* Transitions */
+  --transition-fast:   0.15s ease;
+  --transition-base:   0.25s ease;
+  --transition-slow:   0.4s ease;
 }
 
-/* Global reset and base styles */
-* {
+/* ============================================
+   GLOBAL RESET & BASE
+   ============================================ */
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
 body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', sans-serif;
-  background-image: url('C:/Users/Ikean/budget-app-frontend/src/assets/backgrounds/budgetapp.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  color: #f0f0f0;
+  font-family: var(--font-main);
+  background-color: #070c1c;
+  color: var(--plaid-text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-//   background: rgba(0, 0, 0, 0.4); // optional dark overlay
-  z-index: -1;
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-main);
+  font-weight: 700;
+  color: var(--plaid-text-primary);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
 }
 
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); }
+h3 { font-size: clamp(1.125rem, 2vw, 1.5rem); }
+h4 { font-size: 1.125rem; }
 
-/* Headings */
-h1, h2, h3, h4 {
-  font-weight: 600;
-  color: var(--color-primary);
-  margin-bottom: 0.5rem;
-}
-
-/* Paragraphs and labels */
-p, label {
-  color: #f0f0f0;  /* Lighter color for better contrast */
+p {
+  color: var(--plaid-text-secondary);
   font-size: 1rem;
-  text-shadow: 1px 1px 1px rgba(0,0,0,0.2);  /* Subtle shadow for readability */
+  line-height: 1.65;
 }
 
-/* Buttons */
+a {
+  color: var(--plaid-green);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+
+  &:hover { color: var(--plaid-green-dark); }
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
 button {
-  background-color: var(--color-primary);
-  color: var(--color-secondary);
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: var(--border-radius);
-  font-weight: 600;
+  font-family: var(--font-main);
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all var(--transition-base);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--plaid-green);
+  color: var(--plaid-white);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 14px rgba(0, 198, 94, 0.35);
 
   &:hover {
-    background-color: #003d80;
+    background: var(--plaid-green-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 198, 94, 0.45);
+    color: var(--plaid-white);
+  }
+  &:active { transform: translateY(0); }
+  &:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: var(--plaid-text-primary);
+  border: 1.5px solid var(--plaid-border);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+
+  &:hover {
+    background: var(--plaid-off-white);
+    border-color: var(--plaid-text-secondary);
+    color: var(--plaid-text-primary);
   }
 }
 
-/* Inputs and selects */
-input, select {
-  padding: 0.5rem;
-  border-radius: var(--border-radius);
-  border: 1px solid #ccc;
-  font-size: 1rem;
+.btn-ghost-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: rgba(255,255,255,0.1);
+  color: var(--plaid-white);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.9rem;
+  backdrop-filter: blur(4px);
+
+  &:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.35);
+    color: var(--plaid-white);
+  }
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+input, select, textarea {
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--plaid-border);
+  border-radius: var(--radius-md);
+  background: var(--plaid-white);
+  color: var(--plaid-text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   width: 100%;
-  max-width: 300px;
+
+  &::placeholder { color: var(--plaid-text-muted); }
+
+  &:focus {
+    outline: none;
+    border-color: var(--plaid-green);
+    box-shadow: 0 0 0 3px rgba(0, 198, 94, 0.15);
+  }
 }
 
-/* Cards and containers */
+label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--plaid-text-primary);
+  letter-spacing: 0.01em;
+}
+
+/* ============================================
+   CARDS
+   ============================================ */
+.plaid-card {
+  background: var(--plaid-surface);
+  border: 1px solid var(--plaid-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--plaid-shadow-sm);
+  padding: 1.75rem;
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
+
+  &:hover {
+    box-shadow: var(--plaid-shadow-md);
+    transform: translateY(-2px);
+  }
+}
+
 .card {
-  background-color: var(--color-secondary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  @extend .plaid-card;
 }
 
-/* Utility classes */
-.text-success {
-  color: var(--color-accent);
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.text-success { color: var(--plaid-success) !important; }
+.text-danger  { color: var(--plaid-danger)  !important; }
+.text-muted   { color: var(--plaid-text-muted) !important; }
+.text-on-dark { color: var(--plaid-text-on-dark) !important; }
+
+.bg-dark  { background: var(--plaid-black) !important; }
+.bg-navy  { background: var(--plaid-navy)  !important; }
+.bg-green { background: var(--plaid-green) !important; }
+
+/* ============================================
+   ICONS — Font Awesome overrides
+   ============================================ */
+i[class^="fa-"], i.fa, .fas, .fa {
+  vertical-align: middle;
+  line-height: 1;
 }
 
-.text-danger {
-  color: var(--color-danger);
-}
-
-.text-muted {
-  color: var(--color-muted);
-}
-
-/* Icon styling: color, spacing and alignment */
-/* Use .icon / .nav-icon where templates include the class, and a general selector for FontAwesome <i> tags */
-/* Stronger, more specific rules to ensure icons are visible and spaced */
-i[class^="fa-"], i.fa, .icon, .nav-icon, .fas, .fa {
-  color: var(--color-accent) !important;
-  margin-right: 0.75rem !important;
-  vertical-align: middle !important;
-  line-height: 1 !important;
-  opacity: 1 !important;
-}
-
-/* Brand/icon sizing */
 .brand i {
   font-size: 1.25rem;
-  margin-right: 0.6rem;
-  color: var(--color-primary) !important;
+  margin-right: 0.5rem;
+  color: var(--plaid-green);
 }
 
-/* Make the brand coin/logo gold while keeping other icons the accent color */
-.brand i.fa-coins, .brand .fa-coins {
-  color: #D4AF37 !important; /* slightly darker gold */
-  text-shadow: 0 1px 0 rgba(0,0,0,0.25);
-}
-
-/* Make the brand text/logo label gold to match the coin */
-.brand > span {
-  color: #D4AF37 !important;
-  font-weight: 700;
-  text-shadow: 0 1px 0 rgba(0,0,0,0.18);
-}
-
-/* Unified brand styling class */
 .brand-logo-coin {
-  color: #D4AF37 !important;
+  color: var(--plaid-green) !important;
 }
 
 .brand-logo-text {
-  color: #D4AF37 !important;
-  font-weight: 700;
+  color: var(--plaid-text-on-dark);
+  font-weight: 800;
+  font-size: 1.3rem;
+  letter-spacing: -0.03em;
 }
 
-/* Headings with icons */
-h2 i, h3 i {
-  margin-right: 0.5rem;
-  vertical-align: middle;
-  color: var(--color-accent);
+/* ============================================
+   LOADING SPINNER
+   ============================================ */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--plaid-border);
+  border-top-color: var(--plaid-green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 2rem auto;
 }
 
-/* Button icons */
-button i {
-  margin-right: 0.5rem;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #080c1a; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+  &:hover { background: rgba(255, 255, 255, 0.22); }
+}
+
+
+/* Legacy variables forwarded for compatibility */
+:root {
+  --color-accent:   var(--plaid-green);
+  --color-danger:   var(--plaid-danger);
+  --color-muted:    var(--plaid-text-muted);
+  --border-radius:  var(--radius-md);
+  --shadow:         var(--plaid-shadow-sm);
+}
+
+html[data-theme='light'] body,
+html[data-theme='light'] .app-shell,
+html[data-theme='light'] .page-content,
+html[data-theme='light'] .dashboard,
+html[data-theme='light'] .reports-page,
+html[data-theme='light'] .settings-page {
+  background: #f3f7f5;
+  color: #172522;
+}
+
+html[data-theme='light'] .sidebar {
+  background: #ffffff;
+  border-color: #dce7e2;
+}
+
+html[data-theme='light'] .sidebar .brand-name,
+html[data-theme='light'] .sidebar .nav-item,
+html[data-theme='light'] .sidebar .sidebar-greeting,
+html[data-theme='light'] .sidebar .user-name,
+html[data-theme='light'] .sidebar .user-role {
+  color: #465752;
+}
+
+html[data-theme='light'] .sidebar .nav-item:hover,
+html[data-theme='light'] .sidebar .collapse-btn {
+  background: #edf4f0;
+  color: #243a33;
+}
+
+html[data-theme='light'] .dash-hero {
+  background: linear-gradient(135deg, #e6f5ed, #edf4fa);
+}
+
+html[data-theme='light'] .hero-title,
+html[data-theme='light'] .hero-stat-val,
+html[data-theme='light'] .stat-value,
+html[data-theme='light'] .panel-title,
+html[data-theme='light'] .reports-page .page-header h1,
+html[data-theme='light'] .reports-page .card-header h2,
+html[data-theme='light'] .settings-page .page-header h2,
+html[data-theme='light'] .settings-panel h3,
+html[data-theme='light'] .settings-page .info-row span,
+html[data-theme='light'] .tx-name {
+  color: #172522 !important;
+}
+
+html[data-theme='light'] .hero-sub,
+html[data-theme='light'] .hero-stat-label,
+html[data-theme='light'] .stat-label,
+html[data-theme='light'] .panel-sub,
+html[data-theme='light'] .page-header p,
+html[data-theme='light'] .settings-page label {
+  color: #5b6d67;
+}
+
+html[data-theme='light'] .settings-page .checkbox-label span,
+html[data-theme='light'] .settings-page .preference-note {
+  color: #455852 !important;
+}
+
+html[data-theme='light'] .hero-stats,
+html[data-theme='light'] .stat-card,
+html[data-theme='light'] .chart-panel,
+html[data-theme='light'] .tx-panel,
+html[data-theme='light'] .chart-card,
+html[data-theme='light'] .settings-panel,
+html[data-theme='light'] .tx-item {
+  background: #ffffff;
+  border-color: #dce7e2;
+  box-shadow: 0 8px 24px rgba(24, 52, 43, 0.06);
+}
+
+html[data-theme='light'] .ai-panel {
+  background: #e8f4ed;
+  border-color: #c8e3d3;
+}
+
+html[data-theme='light'] .ai-panel .panel-title,
+html[data-theme='light'] .ai-insights-container,
+html[data-theme='light'] .ai-insights-container h3,
+html[data-theme='light'] .ai-insights-container h4,
+html[data-theme='light'] .ai-insights-container h5,
+html[data-theme='light'] .ai-insights-container p,
+html[data-theme='light'] .ai-insights-container .progress-header,
+html[data-theme='light'] .ai-insights-container .summary {
+  color: #243a33 !important;
+}
+
+html[data-theme='light'] .ai-insights-container .score-card,
+html[data-theme='light'] .ai-insights-container .insight-card,
+html[data-theme='light'] .ai-insights-container .tip-card,
+html[data-theme='light'] .ai-insights-container .goal-card,
+html[data-theme='light'] .ai-insights-container .recommendation {
+  background: #f8fbf9;
+  color: #243a33 !important;
+}
+
+html[data-theme='light'] .ai-insights-container .score-card h4,
+html[data-theme='light'] .ai-insights-container .insight-header h5,
+html[data-theme='light'] .ai-insights-container .insight-text,
+html[data-theme='light'] .ai-insights-container .recommendation strong,
+html[data-theme='light'] .ai-insights-container .recommendation p,
+html[data-theme='light'] .ai-insights-container .tips-section h4,
+html[data-theme='light'] .ai-insights-container .goals-section h4,
+html[data-theme='light'] .ai-insights-container .tip-text,
+html[data-theme='light'] .ai-insights-container .goal-card h5,
+html[data-theme='light'] .ai-insights-container .goal-timeframe,
+html[data-theme='light'] .ai-insights-container .savings-label,
+html[data-theme='light'] .ai-insights-container .empty-state p,
+html[data-theme='light'] .ai-insights-container .score-label {
+  color: #455852 !important;
+}
+
+html[data-theme='light'] .ai-insights-container .priority-badge,
+html[data-theme='light'] .ai-insights-container .progress-percent {
+  background: #e7efeb;
+  color: #40534c !important;
+}
+
+html[data-theme='light'] .ai-insights-container .analysis-source.offline {
+  color: #8a4b00;
+}
+
+html[data-theme='light'] .settings-page input,
+html[data-theme='light'] .settings-page select {
+  background: #ffffff;
+  border-color: #cbd9d3;
+  color: #172522;
+}
+
+html[data-theme='light'] .qa-btn {
+  background: #ffffff;
+  border-color: #dce7e2;
+  color: #40534c;
+}
+
+html[data-theme='light'] .connection-message {
+  color: #40534c;
+}
+
+html[data-theme='light'] .dashboard .tx-name,
+html[data-theme='light'] .dashboard .tx-amount {
+  color: #172522 !important;
+}
+
+html[data-theme='light'] .dashboard .tx-category,
+html[data-theme='light'] .dashboard .tx-empty {
+  color: #52645e !important;
+}
+
+html[data-theme='light'] .settings-page .page-header p,
+html[data-theme='light'] .settings-page .profile-display .info-row label,
+html[data-theme='light'] .settings-page .form-group label,
+html[data-theme='light'] .settings-page .checkbox-label span,
+html[data-theme='light'] .settings-page .preference-note,
+html[data-theme='light'] .settings-page .error-message {
+  color: #40534c !important;
+}
+
+html[data-theme='light'] .settings-page .settings-panel .panel-header h3,
+html[data-theme='light'] .settings-page .profile-display .info-row span {
+  color: #172522 !important;
+}
+
+html[data-theme='light'] .sidebar .budget-editor {
+  background: #f4f8f6;
+  border-color: #d3e0da;
+}
+
+html[data-theme='light'] .sidebar .budget-editor input {
+  background: #ffffff;
+  border-color: #c4d3cc;
+  color: #172522;
+}
+
+html[data-theme='light'] .sidebar .budget-editor input::placeholder {
+  color: #667770;
+}
+
+html[data-theme='light'] .sidebar .budget-editor .add-cat-btn,
+html[data-theme='light'] .sidebar .budget-editor .close-cat-btn {
+  background: #e4ede8;
+  color: #31473f;
+}
+

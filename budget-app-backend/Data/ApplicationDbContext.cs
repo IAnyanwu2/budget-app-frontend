@@ -11,6 +11,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
+    public DbSet<PlaidItem> PlaidItems { get; set; }
+    public DbSet<PlaidTransaction> PlaidTransactions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,6 +42,24 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(t => t.User)
                   .WithMany(u => u.Transactions)
                   .HasForeignKey(t => t.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PlaidItem>(entity =>
+        {
+            entity.HasIndex(item => item.PlaidItemId).IsUnique();
+            entity.HasOne(item => item.User)
+                  .WithMany()
+                  .HasForeignKey(item => item.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PlaidTransaction>(entity =>
+        {
+            entity.HasIndex(transaction => new { transaction.PlaidItemId, transaction.PlaidTransactionId }).IsUnique();
+            entity.HasOne(transaction => transaction.PlaidItem)
+                  .WithMany(item => item.Transactions)
+                  .HasForeignKey(transaction => transaction.PlaidItemId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
     }

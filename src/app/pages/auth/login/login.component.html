@@ -1,61 +1,180 @@
-<section class="auth-page">
-  <div class="auth-container">
-    <div class="auth-card">
-      <div class="auth-header">
-        <h1>🔐 Welcome Back</h1>
-        <p>Sign in to your Saavy account</p>
-      </div>
+<div class="auth-root">
 
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
-        <div class="form-group">
-          <label for="email">📧 Email Address</label>
+  <!-- Animated Background -->
+  <div class="auth-bg">
+    <div class="bg-gradient-overlay"></div>
+    <!-- Floating orbs -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <!-- Animated grid lines -->
+    <div class="grid-lines"></div>
+  </div>
+
+  <!-- Floating preview card (decorative, left side) -->
+  <div class="preview-card animate-float">
+    <div class="preview-balance-label">NET WORTH</div>
+    <div class="preview-balance">$48,320<span class="cents">.00</span></div>
+    <div class="preview-change positive">▲ +$1,240 this month</div>
+    <div class="preview-chart">
+      <svg viewBox="0 0 200 60" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00c65e" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#00c65e" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,50 L20,40 L40,45 L60,30 L80,35 L100,20 L120,25 L140,10 L160,15 L180,5 L200,8" fill="none" stroke="#00c65e" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M0,50 L20,40 L40,45 L60,30 L80,35 L100,20 L120,25 L140,10 L160,15 L180,5 L200,8 L200,60 L0,60Z" fill="url(#chartGrad)"/>
+      </svg>
+    </div>
+    <div class="preview-pills">
+      <span class="pill pill-green">Savings ↑</span>
+      <span class="pill pill-blue">Investments</span>
+    </div>
+  </div>
+
+  <!-- Stats pill (decorative) -->
+  <div class="stat-pill animate-float-slow">
+    <span class="stat-icon">✦</span>
+    <div>
+      <div class="stat-val">AI Insights</div>
+      <div class="stat-sub">3 new recommendations</div>
+    </div>
+  </div>
+
+  <!-- Recent Transaction Card 1 (decorative, right side) -->
+  <div class="transaction-card tx-1 animate-float-delayed">
+    <div class="tx-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    </div>
+    <div class="tx-details">
+      <div class="tx-name">Netflix Subscription</div>
+      <div class="tx-category">Entertainment</div>
+    </div>
+    <div class="tx-amount">-$15.99</div>
+  </div>
+
+  <div class="transaction-card tx-2 animate-float">
+    <div class="tx-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    </div>
+    <div class="tx-details">
+      <div class="tx-name">Whole Foods</div>
+      <div class="tx-category">Groceries</div>
+    </div>
+    <div class="tx-amount">-$84.20</div>
+  </div>
+
+  <div class="transaction-card tx-3 animate-float-slow">
+    <div class="tx-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+    </div>
+    <div class="tx-details">
+      <div class="tx-name">Direct Deposit</div>
+      <div class="tx-category">Income</div>
+    </div>
+    <div class="tx-amount positive">+$2,450.00</div>
+  </div>
+  
+  <!-- Lazy Floating Plaid Cards Removed -->
+
+  <!-- Main Auth Card -->
+  <div class="auth-panel animate-slide-up">
+    <!-- Brand -->
+    <div class="auth-brand">
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#00c65e" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="#00c65e" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="#00c65e" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="brand-name">Saavy</span>
+    </div>
+
+    <div class="auth-heading">
+      <h1>Welcome back</h1>
+      <p>Sign in to your account to continue</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form" autocomplete="on">
+
+      <div class="field-group">
+        <label for="email">Email address</label>
+        <div class="input-wrapper">
+          <span class="input-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </span>
           <input
             id="email"
             type="email"
             formControlName="email"
-            placeholder="Enter your email"
-            [class.error]="email?.invalid && email?.touched"
+            placeholder="you@example.com"
+            autocomplete="email"
+            [class.is-error]="email?.invalid && email?.touched"
           />
-          <div *ngIf="email?.invalid && email?.touched" class="error-message">
-            <span *ngIf="email?.errors?.['required']">Email is required</span>
-            <span *ngIf="email?.errors?.['email']">Please enter a valid email</span>
-          </div>
         </div>
+        <div *ngIf="email?.invalid && email?.touched" class="field-error">
+          <span *ngIf="email?.errors?.['required']">Email is required</span>
+          <span *ngIf="email?.errors?.['email']">Enter a valid email address</span>
+        </div>
+      </div>
 
-        <div class="form-group">
-          <label for="password">🔒 Password</label>
+      <div class="field-group">
+        <div class="label-row">
+          <label for="password">Password</label>
+          <a href="#" class="forgot-link">Forgot password?</a>
+        </div>
+        <div class="input-wrapper">
+          <span class="input-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
           <input
             id="password"
             type="password"
             formControlName="password"
-            placeholder="Enter your password"
-            [class.error]="password?.invalid && password?.touched"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            [class.is-error]="password?.invalid && password?.touched"
           />
-          <div *ngIf="password?.invalid && password?.touched" class="error-message">
-            <span *ngIf="password?.errors?.['required']">Password is required</span>
-            <span *ngIf="password?.errors?.['minlength']">Password must be at least 6 characters</span>
-          </div>
         </div>
-
-        <div *ngIf="error" class="error-banner" role="alert">
-          ⚠️ {{ error }}
+        <div *ngIf="password?.invalid && password?.touched" class="field-error">
+          <span *ngIf="password?.errors?.['required']">Password is required</span>
+          <span *ngIf="password?.errors?.['minlength']">At least 6 characters required</span>
         </div>
-
-        <button 
-          type="submit" 
-          [disabled]="loginForm.invalid || loading"
-          class="auth-btn"
-        >
-          <span *ngIf="loading" class="spinner"></span>
-          {{ loading ? 'Signing In...' : '🚀 Sign In' }}
-        </button>
-      </form>
-
-      <div class="auth-footer">
-        <p>Don't have an account? 
-          <a routerLink="/register" class="auth-link">Create one here</a>
-        </p>
       </div>
+
+      <div *ngIf="error" class="error-banner" role="alert">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ error }}
+      </div>
+
+      <button
+        type="submit"
+        [disabled]="loginForm.invalid || loading"
+        class="submit-btn"
+        id="login-submit-btn"
+      >
+        <span *ngIf="loading" class="btn-spinner"></span>
+        <span>{{ loading ? 'Signing in…' : 'Sign in' }}</span>
+        <svg *ngIf="!loading" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </button>
+    </form>
+
+    <div class="auth-divider">
+      <span>New to Saavy?</span>
     </div>
+
+    <div class="auth-footer">
+      <a routerLink="/register" class="register-link" id="go-to-register">
+        Create a free account
+      </a>
+    </div>
+
+    <p class="legal-text">
+      By continuing, you agree to Saavy's <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+    </p>
   </div>
-</section>
+
+</div>

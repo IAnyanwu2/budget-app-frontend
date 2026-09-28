@@ -132,6 +132,17 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  updateProfile(profile: Pick<User, 'firstName' | 'lastName' | 'email'>): Observable<User> {
+    return this.http.put<User>(`${environment.apiBaseUrl}/auth/me`, profile).pipe(
+      tap(user => {
+        if (isPlatformBrowser(this.platformId)) {
+          localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        }
+        this.currentUserSubject.next(user);
+      })
+    );
+  }
+
   isAuthenticated(): boolean {
     return this.isAuthenticatedSubject.value;
   }

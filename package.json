@@ -4,7 +4,6 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "ollama-proxy": "node server/ollama-proxy.js",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",

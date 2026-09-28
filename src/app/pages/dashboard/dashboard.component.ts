@@ -2,8 +2,10 @@ import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetector
 import { RouterLink } from '@angular/router';
 import { TransactionService } from '../../services/transaction.service';
 import { TransactionSummary } from '../../models/transaction-summary';
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
 import { AiInsightsComponent } from '../../components/ai-insights/ai-insights.component';
+import { PlaidLinkService } from '../../services/plaid-link.service';
+import { UserPreferencesService } from '../../services/user-preferences.service';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -11,20 +13,27 @@ Chart.register(...registerables);
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, CommonModule, CurrencyPipe, DatePipe, AiInsightsComponent],
+  imports: [RouterLink, CommonModule, CurrencyPipe, AiInsightsComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit, AfterViewInit {
   @ViewChild('budgetChart', { static: false }) budgetChart!: ElementRef<HTMLCanvasElement>;
+  @ViewChild(AiInsightsComponent) aiInsights?: AiInsightsComponent;
   
   summary: TransactionSummary | null = null;
   error: string | null = null;
   loading = false;
+  refreshing = false;
+  connectingBank = false;
+  connectionMessage: string | null = null;
   chart: Chart | null = null;
+  recentTransactions: any[] = [];
 
   constructor(
     private transactionService: TransactionService,
+    private plaidLinkService: PlaidLinkService,
+    public preferences: UserPreferencesService,
     private cdr: ChangeDetectorRef
   ) {}
   
@@ -52,6 +61,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       error: (err) => {
         this.error = err?.message || 'Failed to load summary.';
       }
+    });
+
+    this.transactionService.getRecentTransactions().subscribe({
+      next: (data) => {
+        this.recentTransactions = data || [];
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load recent transactions:', err)
     });
   }
 
@@ -89,6 +106,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     if (this.chart) {
       this.chart.destroy();
     }
+
+    const textColor = this.preferences.current.theme === 'light' ? '#52615f' : '#ffffff';
+    const gridColor = this.preferences.current.theme === 'light' ? 'rgba(20, 40, 36, 0.12)' : 'rgba(255, 255, 255, 0.1)';
 
     let labels: string[];
     let incomeData: number[];
@@ -148,11 +168,11 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           title: {
             display: true,
             text: 'Monthly Budget Trend',
-            color: 'white'
+            color: textColor
           },
           legend: {
             labels: {
-              color: 'white'
+              color: textColor
             }
           }
         },
@@ -161,21 +181,25 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             beginAtZero: true,
             suggestedMax: suggestedMax,
             ticks: {
-              color: 'white',
-              callback: function(value) {
-                return '$' + Number(value).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+              color: textColor,
+              callback: (value) => {
+                return new Intl.NumberFormat(undefined, {
+                  style: 'currency',
+                  currency: this.preferences.current.currency,
+                  maximumFractionDigits: 0
+                }).format(Number(value));
               }
             },
             grid: {
-              color: 'rgba(255, 255, 255, 0.1)'
+              color: gridColor
             }
           },
           x: {
             ticks: {
-              color: 'white'
+              color: textColor
             },
             grid: {
-              color: 'rgba(255, 255, 255, 0.1)'
+              color: gridColor
             }
           }
         }
@@ -185,13 +209,37 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     this.chart = new Chart(ctx, config);
   }
 
-  refresh() {
-    this.loadSummary();
+  async refresh() {
+    if (this.refreshing) return;
+    this.refreshing = true;
+    this.connectionMessage = null;
+
+    try {
+      const importedTransactions = await this.plaidLinkService.syncTransactions();
+      this.connectionMessage = `Sync complete. ${importedTransactions} new transactions.`;
+    } catch (error) {
+      this.connectionMessage = error instanceof Error ? error.message : 'Could not sync linked accounts.';
+    } finally {
+      this.refreshing = false;
+      this.loadSummary();
+      this.aiInsights?.generateInsights();
+    }
   }
 
   getSavingsPercent(): number {
-    if (!this.summary || !this.summary.income || !this.summary.savings) return 0;
-    const percent = this.summary.savings / this.summary.income * 100;
+    const rate = this.getSavingsRate();
+    if (rate === null) return 0;
+    return Math.max(0, Math.min(rate, 100));
+  }
+
+  getSavingsRate(): number | null {
+    if (!this.summary || this.summary.income <= 0) return null;
+    return this.summary.savings / this.summary.income * 100;
+  }
+
+  getExpensesPercent(): number {
+    if (!this.summary || this.summary.income <= 0) return 0;
+    const percent = this.summary.expenses / this.summary.income * 100;
     return Math.max(0, Math.min(percent, 100));
   }
 
@@ -210,6 +258,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     // Create CSV format
     const csvContent = [
       'Metric,Value',
+      `Currency,${this.preferences.current.currency}`,
       `Income,${this.summary.income}`,
       `Expenses,${this.summary.expenses}`,
       `Savings,${this.summary.savings}`,
@@ -240,7 +289,24 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     }
   }
 
-  connectBank() {
-    alert('Bank integration coming soon! This will allow you to automatically sync your transactions from your bank account.');
+  async connectBank() {
+    if (this.connectingBank) return;
+
+    this.connectingBank = true;
+    this.connectionMessage = null;
+    try {
+      const result = await this.plaidLinkService.connectAndSync();
+      if (result.cancelled) {
+        this.connectionMessage = 'Bank connection cancelled.';
+      } else {
+        this.connectionMessage = `Account connected. Imported ${result.importedTransactions} new transactions.`;
+        this.loadSummary();
+        this.aiInsights?.generateInsights();
+      }
+    } catch (error) {
+      this.connectionMessage = error instanceof Error ? error.message : 'Could not connect this account.';
+    } finally {
+      this.connectingBank = false;
+    }
   }
 }

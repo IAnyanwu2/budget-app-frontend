@@ -1,152 +1,104 @@
-.reports {
-  padding: 0;
-  min-height: 100vh;
+.reports-page {
+  padding: 3rem 2.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
 
-  .page-nav {
-    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    padding: 1rem 2rem;
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+  }
+}
+
+.page-header {
+  margin-bottom: 2.5rem;
+  text-align: left;
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.5rem;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.1rem;
+    max-width: 600px;
+  }
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  &.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
 
-    .brand {
-      h1 {
-        font-size: 1.8rem;
-        color: #ffffff;
-        margin: 0;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-      }
-      p {
-        font-size: 0.9rem;
-        color: #e0e0e0;
-        margin: 0;
-        opacity: 0.8;
-      }
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 1rem;
-
-      .nav-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1.25rem;
-        background: rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
-        border-radius: 12px;
-        color: #ffffff;
-        text-decoration: none;
-        font-weight: 500;
-        transition: all 0.3s ease;
-
-        .icon {
-          font-size: 1.2rem;
-        }
-
-        &:hover, &.active {
-          background: rgba(255,255,255,0.2);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        &.active {
-          border-color: rgba(40, 167, 69, 0.5);
-          background: rgba(40, 167, 69, 0.2);
-        }
-      }
-    }
-
-    @media (max-width: 768px) {
-      flex-direction: column;
-      gap: 1rem;
-      .nav-links {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-  }
-
-  .content {
-    padding: 0 2rem 2rem;
-    text-align: center;
-  }
-
-  h1 {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-    color: #ffffff;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-  }
-
-  > .content > p {
-    margin-bottom: 2rem;
-    color: #e0e0e0;
-    font-size: 1.1rem;
-    opacity: 0.9;
-  }
-
-  .reports-container {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  .chart-card {
-    background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.1));
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    padding: 2rem;
-    max-width: 1200px; // Increased from 800px
-    margin: 0 auto;
-    transition: all 0.3s ease;
-
     h2 {
-      color: #ffffff;
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+      font-size: 1.25rem;
+      color: #fff;
+      font-weight: 600;
+      margin: 0;
     }
-
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-      border-color: rgba(255,255,255,0.3);
-    }
-  }
-
-  #monthSelect {
-    margin-bottom: 1rem;
-    padding: 0.5rem;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.3);
-    background: rgba(255,255,255,0.1);
-    color: #ffffff;
-    width: 200px;
   }
 
   canvas {
-    margin-top: 2rem;
-    max-width: 100%;
-    min-height: 500px; // Added minimum height
-    height: 500px; // Set explicit height
-    border-radius: 12px;
+    width: 100% !important;
+    max-height: 350px;
+    flex: 1;
   }
+}
 
-  @media (max-width: 600px) {
-    .chart-card {
-      margin: 0 1rem;
-      padding: 1rem;
+.controls {
+  select {
+    appearance: none;
+    background: rgba(255, 255, 255, 0.05) url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E") no-repeat right 1rem top 50%;
+    background-size: 0.65rem auto;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 0.5rem 2.5rem 0.5rem 1rem;
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+
+    &:hover, &:focus {
+      border-color: #00c65e;
+      background-color: rgba(255, 255, 255, 0.08);
     }
-    #monthSelect {
-      width: 100%;
-      max-width: 300px;
+    
+    option {
+      background: #070c1c;
+      color: #fff;
     }
   }
 }

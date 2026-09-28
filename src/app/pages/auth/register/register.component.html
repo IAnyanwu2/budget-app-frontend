@@ -1,108 +1,217 @@
-<section class="auth-page">
-  <div class="auth-container">
-    <div class="auth-card">
-      <div class="auth-header">
-        <h1>🚀 Join Saavy</h1>
-        <p>Create your account and start managing your finances</p>
+<div class="auth-root">
+
+  <!-- Animated Background -->
+  <div class="auth-bg">
+    <div class="bg-gradient-overlay"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid-lines"></div>
+  </div>
+
+  <!-- Floating preview card (decorative) -->
+  <div class="preview-card animate-float">
+    <div class="preview-balance-label">BUDGET HEALTH SCORE</div>
+    <div class="preview-score">92<span class="score-max">/100</span></div>
+    <div class="preview-change positive">▲ Excellent standing</div>
+    <div class="score-bar-wrap">
+      <div class="score-bar"><div class="score-fill" style="width: 92%"></div></div>
+    </div>
+    <div class="preview-insights">
+      <div class="insight-row">
+        <span class="insight-dot dot-green"></span>
+        <span>Savings on track</span>
       </div>
+      <div class="insight-row">
+        <span class="insight-dot dot-yellow"></span>
+        <span>Food spending high</span>
+      </div>
+      <div class="insight-row">
+        <span class="insight-dot dot-green"></span>
+        <span>Bills automated</span>
+      </div>
+    </div>
+  </div>
 
-      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="firstName">👤 First Name</label>
-            <input
-              id="firstName"
-              type="text"
-              formControlName="firstName"
-              placeholder="Enter your first name"
-              [class.error]="firstName?.invalid && firstName?.touched"
-            />
-            <div *ngIf="firstName?.invalid && firstName?.touched" class="error-message">
-              <span *ngIf="firstName?.errors?.['required']">First name is required</span>
-              <span *ngIf="firstName?.errors?.['minlength']">First name must be at least 2 characters</span>
-            </div>
-          </div>
+  <!-- Users joined pill -->
+  <div class="stat-pill animate-float-slow">
+    <div class="avatars">
+      <div class="av av-1">J</div>
+      <div class="av av-2">S</div>
+      <div class="av av-3">M</div>
+    </div>
+    <div>
+      <div class="stat-val">+12,400 users</div>
+      <div class="stat-sub">joined this month</div>
+    </div>
+  </div>
 
-          <div class="form-group">
-            <label for="lastName">👤 Last Name</label>
-            <input
-              id="lastName"
-              type="text"
-              formControlName="lastName"
-              placeholder="Enter your last name"
-              [class.error]="lastName?.invalid && lastName?.touched"
-            />
-            <div *ngIf="lastName?.invalid && lastName?.touched" class="error-message">
-              <span *ngIf="lastName?.errors?.['required']">Last name is required</span>
-              <span *ngIf="lastName?.errors?.['minlength']">Last name must be at least 2 characters</span>
-            </div>
+  <!-- Bank Connection Card (decorative, right side) -->
+  <div class="connection-card animate-float-delayed">
+    <div class="conn-header">
+      <div class="conn-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div class="conn-status">Secure Connection</div>
+    </div>
+    <div class="conn-banks">
+      <div class="bank-pill">Chase</div>
+      <div class="bank-pill">BoA</div>
+      <div class="bank-pill">Wells Fargo</div>
+      <div class="bank-pill">+11,000 more</div>
+    </div>
+  </div>
+
+  <!-- Floating images removed as requested -->
+
+  <!-- Main Auth Card -->
+  <div class="auth-panel animate-slide-up">
+    <!-- Brand -->
+    <div class="auth-brand">
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#00c65e" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="#00c65e" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="#00c65e" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="brand-name">Saavy</span>
+    </div>
+
+    <div class="auth-heading">
+      <h1>Create your account</h1>
+      <p>Free forever. No credit card required.</p>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form" autocomplete="on">
+
+      <div class="form-row-2">
+        <div class="field-group">
+          <label for="firstName">First name</label>
+          <input
+            id="firstName"
+            type="text"
+            formControlName="firstName"
+            placeholder="Jane"
+            autocomplete="given-name"
+            [class.is-error]="firstName?.invalid && firstName?.touched"
+          />
+          <div *ngIf="firstName?.invalid && firstName?.touched" class="field-error">
+            <span *ngIf="firstName?.errors?.['required']">Required</span>
+            <span *ngIf="firstName?.errors?.['minlength']">Too short</span>
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="email">📧 Email Address</label>
+        <div class="field-group">
+          <label for="lastName">Last name</label>
+          <input
+            id="lastName"
+            type="text"
+            formControlName="lastName"
+            placeholder="Doe"
+            autocomplete="family-name"
+            [class.is-error]="lastName?.invalid && lastName?.touched"
+          />
+          <div *ngIf="lastName?.invalid && lastName?.touched" class="field-error">
+            <span *ngIf="lastName?.errors?.['required']">Required</span>
+            <span *ngIf="lastName?.errors?.['minlength']">Too short</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="email">Email address</label>
+        <div class="input-wrapper">
+          <span class="input-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </span>
           <input
             id="email"
             type="email"
             formControlName="email"
-            placeholder="Enter your email"
-            [class.error]="email?.invalid && email?.touched"
+            placeholder="you@example.com"
+            autocomplete="email"
+            [class.is-error]="email?.invalid && email?.touched"
           />
-          <div *ngIf="email?.invalid && email?.touched" class="error-message">
-            <span *ngIf="email?.errors?.['required']">Email is required</span>
-            <span *ngIf="email?.errors?.['email']">Please enter a valid email</span>
-          </div>
         </div>
+        <div *ngIf="email?.invalid && email?.touched" class="field-error">
+          <span *ngIf="email?.errors?.['required']">Email is required</span>
+          <span *ngIf="email?.errors?.['email']">Enter a valid email</span>
+        </div>
+      </div>
 
-        <div class="form-group">
-          <label for="password">🔒 Password</label>
+      <div class="field-group">
+        <label for="password">Password</label>
+        <div class="input-wrapper">
+          <span class="input-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
           <input
             id="password"
             type="password"
             formControlName="password"
-            placeholder="Enter your password"
-            [class.error]="password?.invalid && password?.touched"
+            placeholder="Min. 6 characters"
+            autocomplete="new-password"
+            [class.is-error]="password?.invalid && password?.touched"
           />
-          <div *ngIf="password?.invalid && password?.touched" class="error-message">
-            <span *ngIf="password?.errors?.['required']">Password is required</span>
-            <span *ngIf="password?.errors?.['minlength']">Password must be at least 6 characters</span>
-          </div>
         </div>
+        <div *ngIf="password?.invalid && password?.touched" class="field-error">
+          <span *ngIf="password?.errors?.['required']">Password is required</span>
+          <span *ngIf="password?.errors?.['minlength']">At least 6 characters required</span>
+        </div>
+      </div>
 
-        <div class="form-group">
-          <label for="confirmPassword">🔐 Confirm Password</label>
+      <div class="field-group">
+        <label for="confirmPassword">Confirm password</label>
+        <div class="input-wrapper">
+          <span class="input-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </span>
           <input
             id="confirmPassword"
             type="password"
             formControlName="confirmPassword"
-            placeholder="Confirm your password"
-            [class.error]="confirmPassword?.invalid && confirmPassword?.touched"
+            placeholder="Re-enter password"
+            autocomplete="new-password"
+            [class.is-error]="confirmPassword?.invalid && confirmPassword?.touched"
           />
-          <div *ngIf="confirmPassword?.invalid && confirmPassword?.touched" class="error-message">
-            <span *ngIf="confirmPassword?.errors?.['required']">Please confirm your password</span>
-            <span *ngIf="confirmPassword?.errors?.['passwordMismatch']">Passwords do not match</span>
-          </div>
         </div>
-
-        <div *ngIf="error" class="error-banner" role="alert">
-          ⚠️ {{ error }}
+        <div *ngIf="confirmPassword?.invalid && confirmPassword?.touched" class="field-error">
+          <span *ngIf="confirmPassword?.errors?.['required']">Please confirm your password</span>
+          <span *ngIf="confirmPassword?.errors?.['passwordMismatch']">Passwords don't match</span>
         </div>
-
-        <button 
-          type="submit" 
-          [disabled]="registerForm.invalid || loading"
-          class="auth-btn"
-        >
-          <span *ngIf="loading" class="spinner"></span>
-          {{ loading ? 'Creating Account...' : '✨ Create Account' }}
-        </button>
-      </form>
-
-      <div class="auth-footer">
-        <p>Already have an account? 
-          <a routerLink="/login" class="auth-link">Sign in here</a>
-        </p>
       </div>
+
+      <div *ngIf="error" class="error-banner" role="alert">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ error }}
+      </div>
+
+      <button
+        type="submit"
+        [disabled]="registerForm.invalid || loading"
+        class="submit-btn"
+        id="register-submit-btn"
+      >
+        <span *ngIf="loading" class="btn-spinner"></span>
+        <span>{{ loading ? 'Creating account…' : 'Get started — it\'s free' }}</span>
+        <svg *ngIf="!loading" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </button>
+    </form>
+
+    <div class="auth-divider">
+      <span>Already have an account?</span>
     </div>
+
+    <div class="auth-footer">
+      <a routerLink="/login" class="login-link" id="go-to-login">
+        Sign in instead
+      </a>
+    </div>
+
+    <p class="legal-text">
+      By signing up, you agree to Saavy's <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+    </p>
   </div>
-</section>
+
+</div>

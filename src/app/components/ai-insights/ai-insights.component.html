@@ -13,10 +13,13 @@
   </div>
 
   <div *ngIf="!loading && analysis" class="insights-content">
+    <div class="analysis-source" [class.offline]="analysis.source === 'rules'" role="status">
+      {{ analysis.source === 'ollama' ? 'Ollama analysis' : 'Offline guidance' }}
+    </div>
     <!-- Budget Progress & Alerts -->
     <div *ngIf="budgetGoalNum" class="budget-progress">
       <div class="progress-header">
-        <strong>Budget Goal:</strong> {{ budgetGoalNum | currency:'USD':'symbol':'1.0-0' }}
+        <strong>Budget Goal:</strong> {{ budgetGoalNum | currency:preferences.current.currency:'symbol':'1.0-0' }}
         <span class="progress-percent" *ngIf="progressPercent">{{ progressPercent }}% used</span>
       </div>
       <div class="progress-bar-outer">
@@ -55,10 +58,10 @@
         <div class="recommendation">
           <strong><i class="fa-solid fa-lightbulb"></i> Recommendation:</strong>
           <p>{{ insight.recommendation }}</p>
-          <p *ngIf="insight.suggestedBudget" class="suggested-budget"><strong>Suggested budget:</strong> {{ insight.suggestedBudget | currency:'USD':'symbol':'1.0-0' }}/month</p>
+          <p *ngIf="insight.suggestedBudget" class="suggested-budget"><strong>Suggested budget:</strong> {{ insight.suggestedBudget | currency:preferences.current.currency:'symbol':'1.0-0' }}/month</p>
         </div>
         <div class="savings-potential">
-          <span class="savings-amount">{{ insight.potentialSavings | currency:'USD':'symbol':'1.2-2' }}/month</span>
+          <span class="savings-amount">{{ insight.potentialSavings | currency:preferences.current.currency:'symbol':'1.2-2' }}/month</span>
           <span class="savings-label">potential savings</span>
         </div>
       </div>
@@ -76,12 +79,12 @@
     </div>
 
     <!-- Budget Goals -->
-    <div class="goals-section">
+    <div class="goals-section" *ngIf="budgetGoals.length > 0">
       <h4>🎯 Suggested Budget Goals</h4>
       <div class="goals-grid">
         <div *ngFor="let goal of budgetGoals" class="goal-card">
           <h5>{{ goal.goal }}</h5>
-          <div class="goal-target">{{ goal.target | currency:'USD':'symbol':'1.2-2' }}</div>
+          <div class="goal-target">{{ goal.target | currency:preferences.current.currency:'symbol':'1.2-2' }}</div>
           <div class="goal-timeframe">{{ goal.timeframe }}</div>
         </div>
       </div>

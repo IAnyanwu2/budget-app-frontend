@@ -24,12 +24,18 @@ export class TransactionService {
     return this.http.get<any[]>(`${this.apiUrl}/transactions/category-breakdown`);
   }
 
-  getSpendingTrend(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/transactions/spending-trend`);
+  getSpendingTrend(year?: number): Observable<any[]> {
+    const url = year
+      ? `${this.apiUrl}/transactions/spending-trend?year=${year}`
+      : `${this.apiUrl}/transactions/spending-trend`;
+    return this.http.get<any[]>(url);
   }
 
-  getMonthlyBreakdown(month?: string): Observable<any> {
-    const url = month ? `${this.apiUrl}/transactions/monthly-breakdown/${month}` : `${this.apiUrl}/transactions/monthly-breakdown`;
+  getMonthlyBreakdown(month?: string, year?: number): Observable<any> {
+    const baseUrl = month
+      ? `${this.apiUrl}/transactions/monthly-breakdown/${encodeURIComponent(month)}`
+      : `${this.apiUrl}/transactions/monthly-breakdown`;
+    const url = year ? `${baseUrl}?year=${year}` : baseUrl;
     return this.http.get<any>(url);
   }
 }

@@ -2,6 +2,7 @@ import { Component, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TransactionService } from '../../services/transaction.service';
+import { UserPreferencesService } from '../../services/user-preferences.service';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -23,13 +24,19 @@ export class ReportsComponent implements AfterViewInit {
   @ViewChild('categoryTrendChart') categoryTrendRef!: ElementRef;
 
   charts: { [key: string]: Chart } = {};
-  selectedMonth = 'Dec';
-  selectedYear = '2025';
+  selectedMonth = new Date().toLocaleString('en-US', { month: 'short' });
+  selectedYear = String(new Date().getFullYear());
+  years = Array.from({ length: 8 }, (_, index) => String(new Date().getFullYear() - index));
   
   months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  constructor(private transactionService: TransactionService) {}
+  constructor(
+    private transactionService: TransactionService,
+    public preferences: UserPreferencesService
+  ) {
+    Chart.defaults.color = this.chartTextColor;
+  }
 
   ngAfterViewInit(): void {
     setTimeout(() => {
@@ -46,33 +53,32 @@ export class ReportsComponent implements AfterViewInit {
   }
 
   loadAnnualTrend(): void {
-    this.transactionService.getSpendingTrend().subscribe(data => {
+    this.transactionService.getSpendingTrend(Number(this.selectedYear)).subscribe(data => {
       this.createAnnualTrendChart(data);
     });
   }
 
   loadMonthlyBreakdown(): void {
-    this.transactionService.getMonthlyBreakdown(this.selectedMonth).subscribe(data => {
+    this.transactionService.getMonthlyBreakdown(this.selectedMonth, Number(this.selectedYear)).subscribe(data => {
       this.createCategoryChart(data);
     });
   }
 
   loadComparisonChart(): void {
-    this.transactionService.getSpendingTrend().subscribe(data => {
+    this.transactionService.getSpendingTrend(Number(this.selectedYear)).subscribe(data => {
       this.createComparisonChart(data);
     });
   }
 
   loadSavingsChart(): void {
-    this.transactionService.getSpendingTrend().subscribe(data => {
+    this.transactionService.getSpendingTrend(Number(this.selectedYear)).subscribe(data => {
       this.createSavingsChart(data);
     });
   }
 
   loadCategoryTrendChart(): void {
-    // Load multiple months for trend analysis
-    const monthPromises = ['Jan', 'Jun', 'Dec'].map(month => 
-      this.transactionService.getMonthlyBreakdown(month).toPromise()
+    const monthPromises = this.months.map(month =>
+      this.transactionService.getMonthlyBreakdown(month, Number(this.selectedYear)).toPromise()
     );
     
     Promise.all(monthPromises).then(results => {
@@ -123,15 +129,13 @@ export class ReportsComponent implements AfterViewInit {
         },
         scales: {
           x: {
-            ticks: { color: '#f2f2f7' }
+            ticks: { color: this.chartTextColor }
           },
           y: {
             beginAtZero: true,
             ticks: {
-              color: '#f2f2f7',
-              callback: function(value) {
-                return '$' + Number(value).toLocaleString();
-              }
+              color: this.chartTextColor,
+              callback: value => this.formatCurrency(value)
             }
           }
         }
@@ -143,18 +147,18 @@ export class ReportsComponent implements AfterViewInit {
     if (this.charts['category']) this.charts['category'].destroy();
     
     const ctx = this.categoryRef.nativeElement.getContext('2d');
-    const categories = Object.keys(data);
-    const values = Object.values(data) as number[];
+    const categories = Object.keys(data || {});
+    const values = categories.map(category => Number(data[category]) || 0);
     
     this.charts['category'] = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: categories.map(c => c.charAt(0).toUpperCase() + c.slice(1)),
+        labels: categories.map(category => this.formatCategory(category)),
         datasets: [{
           data: values,
           backgroundColor: [
             '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
-            '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+            '#9966FF', '#FF9F40', '#C9CBCF', '#7B8D8A'
           ]
         }]
       },
@@ -197,14 +201,12 @@ export class ReportsComponent implements AfterViewInit {
           title: { display: true, text: 'Income vs Expenses (Last 6 Months)' }
         },
         scales: {
-          x: { ticks: { color: '#f2f2f7' } },
+          x: { ticks: { color: this.chartTextColor } },
           y: {
             beginAtZero: true,
             ticks: {
-              color: '#f2f2f7',
-              callback: function(value) {
-                return '$' + Number(value).toLocaleString();
-              }
+              color: this.chartTextColor,
+              callback: value => this.formatCurrency(value)
             }
           }
         }
@@ -216,7 +218,9 @@ export class ReportsComponent implements AfterViewInit {
     if (this.charts['savings']) this.charts['savings'].destroy();
     
     const ctx = this.savingsRef.nativeElement.getContext('2d');
-    const savingsRates = data.map(d => Number((((d.savings / d.income) * 100).toFixed(1))));
+    const savingsRates = data.map(d => d.income > 0
+      ? Number(((d.savings / d.income) * 100).toFixed(1))
+      : 0);
     
     this.charts['savings'] = new Chart(ctx, {
       type: 'line',
@@ -237,12 +241,11 @@ export class ReportsComponent implements AfterViewInit {
           title: { display: true, text: 'Savings Rate Trend' }
         },
         scales: {
-          x: { ticks: { color: '#f2f2f7' } },
+          x: { ticks: { color: this.chartTextColor } },
           y: {
             beginAtZero: true,
-            max: 50,
             ticks: {
-              color: '#f2f2f7',
+              color: this.chartTextColor,
               callback: function(value) {
                 return value + '%';
               }
@@ -257,22 +260,30 @@ export class ReportsComponent implements AfterViewInit {
     if (this.charts['categoryTrend']) this.charts['categoryTrend'].destroy();
     
     const ctx = this.categoryTrendRef.nativeElement.getContext('2d');
-    const months = ['Jan', 'Jun', 'Dec'];
-    const categories = ['housing', 'food', 'transport', 'entertainment'];
+    const categories = [...new Set(data.flatMap(monthData => Object.keys(monthData || {})))]
+      .map(category => ({
+        key: category,
+        total: data.reduce((sum, monthData) => sum + (Number(monthData?.[category]) || 0), 0)
+      }))
+      .filter(category => category.total > 0)
+      .sort((first, second) => second.total - first.total)
+      .slice(0, 5);
+    const categoryColors = [
+      'rgba(255, 99, 132, 0.75)',
+      'rgba(54, 162, 235, 0.75)',
+      'rgba(255, 205, 86, 0.8)',
+      'rgba(75, 192, 192, 0.75)',
+      'rgba(153, 102, 255, 0.75)'
+    ];
     
     this.charts['categoryTrend'] = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: months,
+        labels: this.months,
         datasets: categories.map((category, index) => ({
-          label: category.charAt(0).toUpperCase() + category.slice(1),
-          data: data.map(monthData => monthData[category] || 0),
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.7)',
-            'rgba(54, 162, 235, 0.7)', 
-            'rgba(255, 205, 86, 0.7)',
-            'rgba(75, 192, 192, 0.7)'
-          ][index]
+          label: this.formatCategory(category.key),
+          data: data.map(monthData => Number(monthData?.[category.key]) || 0),
+          backgroundColor: categoryColors[index]
         }))
       },
       options: {
@@ -281,18 +292,34 @@ export class ReportsComponent implements AfterViewInit {
           title: { display: true, text: 'Category Spending Comparison' }
         },
         scales: {
-          x: { ticks: { color: '#f2f2f7' } },
+          x: { ticks: { color: this.chartTextColor } },
           y: {
             beginAtZero: true,
             ticks: {
-              color: '#f2f2f7',
-              callback: function(value) {
-                return '$' + Number(value).toLocaleString();
-              }
+              color: this.chartTextColor,
+              callback: value => this.formatCurrency(value)
             }
           }
         }
       }
     });
+  }
+
+  private get chartTextColor(): string {
+    return this.preferences.current.theme === 'light' ? '#52615f' : '#f2f2f7';
+  }
+
+  private formatCurrency(value: string | number): string {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: this.preferences.current.currency,
+      maximumFractionDigits: 0
+    }).format(Number(value));
+  }
+
+  private formatCategory(category: string): string {
+    return category
+      .replace(/[_-]+/g, ' ')
+      .replace(/\b\w/g, character => character.toUpperCase());
   }
 }

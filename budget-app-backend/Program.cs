@@ -10,10 +10,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+builder.Services.AddDataProtection();
+builder.Services.AddHttpClient<PlaidApiClient>();
+builder.Services.AddScoped<PlaidSyncService>();
+builder.Services.AddScoped<PlaidSchemaInitializer>();
+builder.Services.AddHttpClient<OllamaAnalysisService>(client => client.Timeout = TimeSpan.FromMinutes(3));
 
 // Add Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -31,9 +36,9 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         ValidateIssuer = true,
-        ValidIssuer = jwtSettings["Issuer"],
+        ValidIssuer = jwtSettings["Issuer"] ?? "BudgetApp",
         ValidateAudience = true,
-        ValidAudience = jwtSettings["Audience"],
+        ValidAudience = jwtSettings["Audience"] ?? "BudgetAppUsers",
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
@@ -83,8 +88,11 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.EnsureCreated();
+    await scope.ServiceProvider.GetRequiredService<PlaidSchemaInitializer>().InitializeAsync();
 }
 
 app.Run();
+
+public partial class Program { }
 
 

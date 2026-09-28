@@ -1,125 +1,191 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+using System.Globalization;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using budget_app_backend.Data;
 
 [ApiController]
+[Authorize]
 [Route("api/transactions")]
 public class TransactionController : ControllerBase
 {
-    [HttpGet("summary")]
-    public IActionResult GetBudgetSummary()
-    {
-        // Get the current user ID from the JWT token
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized();
-        }
+    private readonly ApplicationDbContext _context;
 
-        var summary = new {
-            userId = userId,
-            income = 5000,
-            expenses = 3200,
-            savings = 1800,
-            lastUpdated = DateTime.UtcNow
-        };
-        return Ok(summary);
+    public TransactionController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    [HttpGet("summary")]
+    public async Task<IActionResult> GetBudgetSummary(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var month = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        var transactions = await GetUserTransactions(userId, month, month.AddMonths(1), cancellationToken);
+        var income = transactions.Where(transaction => transaction.Amount > 0).Sum(transaction => transaction.Amount);
+        var expenses = -transactions.Where(transaction => transaction.Amount < 0).Sum(transaction => transaction.Amount);
+
+        return Ok(new { income, expenses, savings = income - expenses, lastUpdated = DateTime.UtcNow });
     }
 
     [HttpGet("recent")]
-    public IActionResult GetRecentTransactions()
+    public async Task<IActionResult> GetRecentTransactions(CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized();
-        }
+        if (!TryGetUserId(out var userId)) return Unauthorized();
 
-        var transactions = new[]
-        {
-            new { id = 1, description = "Grocery Shopping", amount = -120.50, category = "Food", date = DateTime.UtcNow.AddDays(-1) },
-            new { id = 2, description = "Salary", amount = 3000.00, category = "Income", date = DateTime.UtcNow.AddDays(-5) },
-            new { id = 3, description = "Gas Station", amount = -45.00, category = "Transportation", date = DateTime.UtcNow.AddDays(-2) }
-        };
-        return Ok(transactions);
+        var transactions = await GetUserTransactions(userId, null, null, cancellationToken);
+        return Ok(transactions
+            .OrderByDescending(transaction => transaction.Date)
+            .Take(10)
+            .Select(transaction => new
+            {
+                id = transaction.Id,
+                name = transaction.Description,
+                description = transaction.Description,
+                amount = transaction.Amount,
+                category = transaction.Category,
+                date = transaction.Date,
+                type = transaction.Amount >= 0 ? "income" : "expense"
+            }));
     }
 
     [HttpGet("category-breakdown")]
-    public IActionResult GetCategoryBreakdown()
+    public async Task<IActionResult> GetCategoryBreakdown(CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized();
-        }
+        if (!TryGetUserId(out var userId)) return Unauthorized();
 
-        var breakdown = new[]
-        {
-            new { category = "Food", amount = 450, percentage = 35 },
-            new { category = "Transportation", amount = 300, percentage = 23 },
-            new { category = "Entertainment", amount = 200, percentage = 15 },
-            new { category = "Utilities", amount = 350, percentage = 27 }
-        };
+        var month = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        var transactions = await GetUserTransactions(userId, month, month.AddMonths(1), cancellationToken);
+        var expenses = transactions.Where(transaction => transaction.Amount < 0).ToArray();
+        var total = -expenses.Sum(transaction => transaction.Amount);
+        var breakdown = expenses
+            .GroupBy(transaction => transaction.Category)
+            .Select(group =>
+            {
+                var amount = -group.Sum(transaction => transaction.Amount);
+                return new { category = group.Key, amount, percentage = total == 0 ? 0 : Math.Round(amount / total * 100, 2) };
+            })
+            .OrderByDescending(category => category.amount);
+
         return Ok(breakdown);
     }
 
     [HttpGet("spending-trend")]
-    public IActionResult GetSpendingTrend()
+    public async Task<IActionResult> GetSpendingTrend([FromQuery] int? year, CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized();
-        }
+        if (!TryGetUserId(out var userId)) return Unauthorized();
 
-        // Full year of realistic financial data with variation
-        var trend = new[]
+        var selectedYear = year ?? DateTime.UtcNow.Year;
+        if (selectedYear < 1900 || selectedYear > 9998) return BadRequest("Year is out of range.");
+
+        var transactions = await GetUserTransactions(
+            userId,
+            new DateTime(selectedYear, 1, 1),
+            new DateTime(selectedYear + 1, 1, 1),
+            cancellationToken);
+
+        var trend = Enumerable.Range(1, 12).Select(monthNumber =>
         {
-            new { month = "Jan", income = 4500, expenses = 3800, savings = 700 },
-            new { month = "Feb", income = 4800, expenses = 3200, savings = 1600 },
-            new { month = "Mar", income = 5000, expenses = 4100, savings = 900 },
-            new { month = "Apr", income = 5200, expenses = 3300, savings = 1900 },
-            new { month = "May", income = 5000, expenses = 3200, savings = 1800 },
-            new { month = "Jun", income = 5300, expenses = 4200, savings = 1100 },
-            new { month = "Jul", income = 5100, expenses = 3900, savings = 1200 },
-            new { month = "Aug", income = 5400, expenses = 3600, savings = 1800 },
-            new { month = "Sep", income = 5200, expenses = 3500, savings = 1700 },
-            new { month = "Oct", income = 5600, expenses = 3800, savings = 1800 },
-            new { month = "Nov", income = 5300, expenses = 4000, savings = 1300 },
-            new { month = "Dec", income = 5800, expenses = 4500, savings = 1300 }
-        };
+            var monthTransactions = transactions.Where(transaction => transaction.Date.Month == monthNumber).ToArray();
+            var monthIncome = monthTransactions.Where(transaction => transaction.Amount > 0).Sum(transaction => transaction.Amount);
+            var monthExpenses = -monthTransactions.Where(transaction => transaction.Amount < 0).Sum(transaction => transaction.Amount);
+            return new
+            {
+                month = new DateTime(selectedYear, monthNumber, 1).ToString("MMM", CultureInfo.InvariantCulture),
+                income = monthIncome,
+                expenses = monthExpenses,
+                savings = monthIncome - monthExpenses
+            };
+        });
+
         return Ok(trend);
     }
 
     [HttpGet("monthly-breakdown/{month?}")]
-    public IActionResult GetMonthlyBreakdown(string month = null)
+    public async Task<IActionResult> GetMonthlyBreakdown(
+        string? month = null,
+        [FromQuery] int? year = null,
+        CancellationToken cancellationToken = default)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null || !int.TryParse(userIdClaim, out var userId))
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var selectedYear = year ?? DateTime.UtcNow.Year;
+        if (selectedYear < 1900 || selectedYear > 9998) return BadRequest("Year is out of range.");
+        var monthName = month ?? DateTime.UtcNow.ToString("MMM", CultureInfo.InvariantCulture);
+        if (!DateTime.TryParseExact(monthName, "MMM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedMonth))
         {
-            return Unauthorized();
+            return BadRequest("Month must be a three-letter month name.");
         }
 
-        // If no month specified, use current month
-        month = month ?? DateTime.UtcNow.ToString("MMM");
+        var start = new DateTime(selectedYear, parsedMonth.Month, 1);
+        var transactions = await GetUserTransactions(userId, start, start.AddMonths(1), cancellationToken);
+        var breakdown = transactions
+            .Where(transaction => transaction.Amount < 0)
+            .GroupBy(transaction => transaction.Category)
+            .ToDictionary(group => group.Key, group => -group.Sum(transaction => transaction.Amount));
 
-        // Generate different data based on month for variety
-        var baseData = new Dictionary<string, object>
-        {
-            ["Jan"] = new { housing = 1200, food = 650, transport = 400, entertainment = 300, utilities = 250, healthcare = 150, shopping = 350, other = 500 },
-            ["Feb"] = new { housing = 1200, food = 580, transport = 380, entertainment = 250, utilities = 280, healthcare = 200, shopping = 290, other = 400 },
-            ["Mar"] = new { housing = 1200, food = 720, transport = 420, entertainment = 380, utilities = 240, healthcare = 180, shopping = 450, other = 510 },
-            ["Apr"] = new { housing = 1200, food = 600, transport = 390, entertainment = 320, utilities = 220, healthcare = 160, shopping = 310, other = 400 },
-            ["May"] = new { housing = 1200, food = 590, transport = 350, entertainment = 290, utilities = 200, healthcare = 170, shopping = 280, other = 420 },
-            ["Jun"] = new { housing = 1200, food = 780, transport = 450, entertainment = 520, utilities = 190, healthcare = 190, shopping = 480, other = 590 },
-            ["Jul"] = new { housing = 1200, food = 720, transport = 410, entertainment = 480, utilities = 180, healthcare = 160, shopping = 420, other = 540 },
-            ["Aug"] = new { housing = 1200, food = 650, transport = 380, entertainment = 350, utilities = 170, healthcare = 140, shopping = 380, other = 480 },
-            ["Sep"] = new { housing = 1200, food = 600, transport = 360, entertainment = 290, utilities = 210, healthcare = 180, shopping = 350, other = 460 },
-            ["Oct"] = new { housing = 1200, food = 680, transport = 400, entertainment = 330, utilities = 240, healthcare = 200, shopping = 420, other = 510 },
-            ["Nov"] = new { housing = 1200, food = 720, transport = 430, entertainment = 380, utilities = 280, healthcare = 220, shopping = 470, other = 550 },
-            ["Dec"] = new { housing = 1200, food = 850, transport = 460, entertainment = 650, utilities = 300, healthcare = 180, shopping = 750, other = 710 }
-        };
-
-        return Ok(baseData.ContainsKey(month) ? baseData[month] : baseData["Dec"]);
+        return Ok(breakdown);
     }
+
+    private async Task<List<TransactionRow>> GetUserTransactions(
+        int userId,
+        DateTime? start,
+        DateTime? end,
+        CancellationToken cancellationToken)
+    {
+        var legacyQuery = _context.Transactions.Where(transaction => transaction.UserId == userId);
+        var plaidQuery = _context.PlaidTransactions.Where(transaction => transaction.PlaidItem.UserId == userId);
+        if (start.HasValue && end.HasValue)
+        {
+            var startDate = start.Value;
+            var endDate = end.Value;
+            legacyQuery = legacyQuery.Where(transaction => transaction.Date >= startDate && transaction.Date < endDate);
+            plaidQuery = plaidQuery.Where(transaction => transaction.Date >= startDate && transaction.Date < endDate);
+        }
+
+        var legacy = await legacyQuery.Select(transaction => new
+        {
+            transaction.Id,
+            transaction.Description,
+            transaction.Amount,
+            transaction.Category,
+            transaction.Type,
+            transaction.Date
+        }).ToListAsync(cancellationToken);
+
+        var plaid = await plaidQuery.Select(transaction => new
+        {
+            transaction.Id,
+            transaction.Description,
+            transaction.Amount,
+            transaction.Category,
+            transaction.Date
+        }).ToListAsync(cancellationToken);
+
+        return legacy.Select(transaction => new TransactionRow(
+                $"legacy-{transaction.Id}",
+                transaction.Description,
+                string.Equals(transaction.Type, "income", StringComparison.OrdinalIgnoreCase)
+                    ? Math.Abs(transaction.Amount)
+                    : -Math.Abs(transaction.Amount),
+                transaction.Category,
+                transaction.Date))
+            .Concat(plaid.Select(transaction => new TransactionRow(
+                $"plaid-{transaction.Id}",
+                transaction.Description,
+                transaction.Amount,
+                transaction.Category,
+                transaction.Date)))
+            .ToList();
+    }
+
+    private bool TryGetUserId(out int userId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(userIdClaim, out userId);
+    }
+
+    private sealed record TransactionRow(string Id, string Description, decimal Amount, string Category, DateTime Date);
 }

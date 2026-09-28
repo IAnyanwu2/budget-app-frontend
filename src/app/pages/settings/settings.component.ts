@@ -3,14 +3,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { UserPreferencesService } from '../../services/user-preferences.service';
 import { User } from '../../models/auth';
-
-interface UserSettings {
-  notifications: boolean;
-  monthlyBudgetLimit: number | null;
-  currency: string;
-  theme: string;
-}
 
 @Component({
   selector: 'app-settings',
@@ -24,15 +18,19 @@ export class SettingsComponent implements OnInit {
   saveSuccess = false;
   editingProfile = false;
   profileSaveSuccess = false;
+  profileSaveError: string | null = null;
+  profileSaving = false;
   currentUser: User | null = null;
   
-  private readonly SETTINGS_KEY = 'user_settings';
-
-  constructor(private fb: FormBuilder, private authService: AuthService) {
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private preferences: UserPreferencesService
+  ) {
     this.settingsForm = this.fb.group({
       notifications: [true],
       currency: ['USD'],
-      theme: ['light']
+      theme: ['dark']
     });
 
     this.profileForm = this.fb.group({
@@ -60,20 +58,11 @@ export class SettingsComponent implements OnInit {
   }
 
   private loadSettings() {
-    const saved = localStorage.getItem(this.SETTINGS_KEY);
-    if (saved) {
-      try {
-        const settings: UserSettings = JSON.parse(saved);
-        this.settingsForm.patchValue(settings);
-      } catch (error) {
-        console.warn('Failed to load settings:', error);
-      }
-    }
+    this.settingsForm.patchValue(this.preferences.current);
   }
 
   saveSettings() {
-    const settings: UserSettings = this.settingsForm.value;
-    localStorage.setItem(this.SETTINGS_KEY, JSON.stringify(settings));
+    this.preferences.save(this.settingsForm.getRawValue());
     
     this.saveSuccess = true;
     setTimeout(() => this.saveSuccess = false, 3000);
@@ -90,29 +79,22 @@ export class SettingsComponent implements OnInit {
   }
 
   saveProfile() {
-    if (this.profileForm.valid) {
-      const updatedProfile = this.profileForm.value;
-      
-      // For now, save to localStorage (TODO: implement backend API)
-      if (this.currentUser) {
-        const updatedUser = {
-          ...this.currentUser,
-          firstName: updatedProfile.firstName,
-          lastName: updatedProfile.lastName,
-          email: updatedProfile.email
-        };
-        
-        // Update localStorage
-        localStorage.setItem('auth_user', JSON.stringify(updatedUser));
-        this.currentUser = updatedUser;
-        
+    if (!this.profileForm.valid || this.profileSaving) return;
+
+    this.profileSaving = true;
+    this.profileSaveError = null;
+    this.authService.updateProfile(this.profileForm.getRawValue()).subscribe({
+      next: user => {
+        this.currentUser = user;
         this.profileSaveSuccess = true;
         this.editingProfile = false;
-        
-        setTimeout(() => {
-          this.profileSaveSuccess = false;
-        }, 3000);
+        this.profileSaving = false;
+        setTimeout(() => this.profileSaveSuccess = false, 3000);
+      },
+      error: error => {
+        this.profileSaving = false;
+        this.profileSaveError = error?.error?.message || error?.message || 'Could not update your profile.';
       }
-    }
+    });
   }
 }
