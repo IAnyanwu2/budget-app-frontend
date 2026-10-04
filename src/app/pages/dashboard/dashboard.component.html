@@ -19,6 +19,13 @@
         <p class="hero-sub">Track spending, uncover insights, and hit your goals — all in one place.</p>
 
         <div class="hero-cta-row">
+          <select class="cta-select" (change)="onDateRangeChange($event)" [value]="selectedDateRange">
+            <option value="last_30_days">Last 30 Days</option>
+            <option value="current_month">Current Month</option>
+            <option value="past_6_months">Past 6 Months</option>
+            <option value="past_12_months">Past 12 Months</option>
+          </select>
+
           <button (click)="refresh()" [disabled]="refreshing" class="cta-btn cta-ghost" id="refresh-chart-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
             {{ refreshing ? 'Syncing…' : 'Sync & Refresh' }}
@@ -178,6 +185,14 @@
         <button (click)="connectBank()" class="qa-btn" [disabled]="connectingBank">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="22" x2="21" y2="22"/><polygon points="12 2 20 7 4 7"/></svg>
           {{ connectingBank ? 'Connecting…' : 'Connect Bank' }}
+        </button>
+        <button (click)="testWebhook()" class="qa-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Test Webhook
+        </button>
+        <button (click)="simulateTransaction()" class="qa-btn" [disabled]="simulatingTx">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          {{ simulatingTx ? 'Generating...' : 'Simulate Tx' }}
         </button>
       </div>
       <p *ngIf="connectionMessage" class="connection-message" role="status" aria-live="polite">

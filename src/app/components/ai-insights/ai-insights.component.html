@@ -94,4 +94,9 @@
   <div *ngIf="!loading && !analysis" class="empty-state">
     <p>Click "Refresh" to get AI-powered insights about your spending!</p>
   </div>
+
+  <div *ngIf="toastMessage" class="toast-notification">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <span>{{ toastMessage }}</span>
+  </div>
 </div>

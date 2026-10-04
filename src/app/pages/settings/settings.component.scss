@@ -92,6 +92,7 @@
 
   input[type="text"],
   input[type="email"],
+  input[type="password"],
   select {
     width: 100%;
     padding: 0.85rem 1rem;
@@ -200,4 +201,27 @@
   align-items: center;
   gap: 8px;
   font-size: 0.9rem;
+}
+
+:host-context(html[data-theme='light']) {
+  .form-group {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    select {
+      background: #ffffff;
+      border-color: #cbd9d3;
+      color: #172522;
+      
+      &:focus {
+        border-color: #00c65e;
+        background: #ffffff;
+      }
+    }
+
+    select option {
+      background: #ffffff;
+      color: #172522;
+    }
+  }
 }

@@ -3,5 +3,14 @@
     "target": "http://localhost:5231",
     "secure": false,
     "changeOrigin": true
+  },
+  "/ollama": {
+    "target": "http://localhost:11434",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/ollama": ""
+    }
   }
 }
+  

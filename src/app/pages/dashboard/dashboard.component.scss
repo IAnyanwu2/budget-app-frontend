@@ -139,6 +139,36 @@
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.cta-select {
+  padding: 9px 30px 9px 15px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255, 255, 255, 0.7)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+
+  &:hover, &:focus { 
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+    outline: none;
+  }
+  
+  option {
+    background: #080d20;
+    color: #fff;
+  }
 }
 
 .cta-btn {
@@ -166,6 +196,44 @@
     color: rgba(255, 255, 255, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.12);
     &:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+    
+    :host-context(html[data-theme='light']) & {
+      background: rgba(255, 255, 255, 0.8);
+      color: #172522;
+      border-color: #cbd9d3;
+      &:hover { background: #ffffff; color: #000; }
+    }
+  }
+}
+
+:host-context(html[data-theme='light']) {
+  .cta-select {
+    background-color: rgba(255, 255, 255, 0.8);
+    color: #172522;
+    border-color: #cbd9d3;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23172522' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    
+    &:hover, &:focus {
+      background-color: #ffffff;
+      border-color: #aabeb5;
+    }
+    
+    option {
+      background: #ffffff;
+      color: #172522;
+    }
+  }
+
+  .qa-btn {
+    background: #ffffff;
+    border-color: #dce7e2;
+    color: #40534c;
+    
+    &:hover {
+      background: #f3f7f5;
+      color: #172522;
+      border-color: #cbd9d3;
+    }
   }
 }
 

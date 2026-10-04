@@ -2,8 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { UserPreferencesService } from '../../services/user-preferences.service';
+import { environment } from '../../../environments/environment';
 import { User } from '../../models/auth';
 
 @Component({
@@ -22,10 +24,16 @@ export class SettingsComponent implements OnInit {
   profileSaving = false;
   currentUser: User | null = null;
   
+  aiForm: FormGroup;
+  aiSaveSuccess = false;
+  aiSaveError: string | null = null;
+  aiSaving = false;
+  
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private preferences: UserPreferencesService
+    private preferences: UserPreferencesService,
+    private http: HttpClient
   ) {
     this.settingsForm = this.fb.group({
       notifications: [true],
@@ -38,11 +46,25 @@ export class SettingsComponent implements OnInit {
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]]
     });
+
+    this.aiForm = this.fb.group({
+      provider: ['ollama'],
+      model: ['mistral:7b'],
+      apiKey: ['']
+    });
   }
 
   ngOnInit() {
     this.loadSettings();
     this.loadCurrentUser();
+    this.loadAiPreferences();
+    
+    // Live update theme preview
+    this.settingsForm.get('theme')?.valueChanges.subscribe(theme => {
+      if (theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+    });
   }
   
 
@@ -94,6 +116,37 @@ export class SettingsComponent implements OnInit {
       error: error => {
         this.profileSaving = false;
         this.profileSaveError = error?.error?.message || error?.message || 'Could not update your profile.';
+      }
+    });
+  }
+
+  private loadAiPreferences() {
+    this.http.get<any>(`${environment.apiBaseUrl}/settings/ai-preferences`).subscribe({
+      next: (data) => {
+        this.aiForm.patchValue({
+          provider: data.provider,
+          model: data.model,
+          apiKey: '' // Do not fetch existing API keys
+        });
+      },
+      error: (err) => console.error('Failed to load AI preferences', err)
+    });
+  }
+
+  saveAiPreferences() {
+    if (this.aiSaving) return;
+    this.aiSaving = true;
+    this.aiSaveError = null;
+    
+    this.http.post(`${environment.apiBaseUrl}/settings/ai-preferences`, this.aiForm.getRawValue()).subscribe({
+      next: () => {
+        this.aiSaveSuccess = true;
+        this.aiSaving = false;
+        setTimeout(() => this.aiSaveSuccess = false, 3000);
+      },
+      error: (err) => {
+        this.aiSaving = false;
+        this.aiSaveError = err?.message || 'Could not save AI preferences.';
       }
     });
   }

@@ -14,7 +14,7 @@ builder.Services.AddDataProtection();
 builder.Services.AddHttpClient<PlaidApiClient>();
 builder.Services.AddScoped<PlaidSyncService>();
 builder.Services.AddScoped<PlaidSchemaInitializer>();
-builder.Services.AddHttpClient<OllamaAnalysisService>(client => client.Timeout = TimeSpan.FromMinutes(3));
+builder.Services.AddHttpClient<OllamaAnalysisService>(client => client.Timeout = TimeSpan.FromMinutes(10));
 
 // Add Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

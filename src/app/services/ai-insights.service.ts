@@ -101,10 +101,13 @@ export class AiInsightsService {
           });
         }
         if (!this.isValidAnalysis(parsed)) {
+          console.error('Invalid analysis schema from model:', parsed);
           return throwError(() => new Error('Invalid analysis schema from model'));
         }
           return of(parsed);
       } catch (e) {
+        console.error('Failed to parse or validate Ollama response. Error:', e);
+        console.error('Raw Ollama response:', text);
         return throwError(() => e);
       }
       })
@@ -112,7 +115,19 @@ export class AiInsightsService {
   }
 
   private parseOllamaResponse(response: string, transactionData: any): SpendingAnalysis {
-    const aiAnalysis = JSON.parse(response.trim());
+    // Strip markdown formatting if the model wrapped the JSON
+    let cleanResponse = response.trim();
+    if (cleanResponse.startsWith('```')) {
+      const firstNewline = cleanResponse.indexOf('\n');
+      if (firstNewline !== -1) {
+        cleanResponse = cleanResponse.substring(firstNewline).trim();
+      }
+      if (cleanResponse.endsWith('```')) {
+        cleanResponse = cleanResponse.substring(0, cleanResponse.length - 3).trim();
+      }
+    }
+
+    const aiAnalysis = JSON.parse(cleanResponse);
 
       // If model explicitly returned a refusal object, treat as refusal
       if ((aiAnalysis as any).refused) {

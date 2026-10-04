@@ -54,6 +54,49 @@ public sealed class PlaidSyncService
         var items = await _context.PlaidItems
             .Where(item => item.UserId == userId)
             .ToListAsync(cancellationToken);
+        return await SyncItemsAsync(items, cancellationToken);
+    }
+
+    public async Task FireSandboxWebhookAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var items = await _context.PlaidItems
+            .Where(item => item.UserId == userId)
+            .ToListAsync(cancellationToken);
+            
+        foreach (var item in items)
+        {
+            await _plaidApi.FireSandboxWebhookAsync(_tokenProtector.Unprotect(item.ProtectedAccessToken), cancellationToken);
+        }
+    }
+
+    public async Task CreateSandboxTransactionsAsync(int userId, int count = 5, CancellationToken cancellationToken = default)
+    {
+        var items = await _context.PlaidItems
+            .Where(item => item.UserId == userId)
+            .ToListAsync(cancellationToken);
+            
+        foreach (var item in items)
+        {
+            await _plaidApi.CreateSandboxTransactionAsync(_tokenProtector.Unprotect(item.ProtectedAccessToken), count, cancellationToken);
+        }
+    }
+
+    public async Task<PlaidSyncResult?> SyncByPlaidItemIdAsync(string plaidItemId, CancellationToken cancellationToken = default)
+    {
+        var item = await _context.PlaidItems
+            .SingleOrDefaultAsync(i => i.PlaidItemId == plaidItemId, cancellationToken);
+            
+        if (item is null)
+        {
+            return null;
+        }
+
+        var results = await SyncItemsAsync(new[] { item }, cancellationToken);
+        return results.FirstOrDefault();
+    }
+
+    private async Task<IReadOnlyList<PlaidSyncResult>> SyncItemsAsync(IReadOnlyList<PlaidItem> items, CancellationToken cancellationToken)
+    {
         var results = new List<PlaidSyncResult>(items.Count);
 
         foreach (var item in items)
@@ -74,12 +117,14 @@ public sealed class PlaidSyncService
                     await UpsertTransactionAsync(item.Id, transaction, cancellationToken);
                     added++;
                 }
+                await _context.SaveChangesAsync(cancellationToken);
 
                 foreach (var transaction in page.Modified)
                 {
                     await UpsertTransactionAsync(item.Id, transaction, cancellationToken);
                     modified++;
                 }
+                await _context.SaveChangesAsync(cancellationToken);
 
                 foreach (var transactionId in page.Removed)
                 {
@@ -92,6 +137,7 @@ public sealed class PlaidSyncService
                         removed++;
                     }
                 }
+                await _context.SaveChangesAsync(cancellationToken);
 
                 await _context.SaveChangesAsync(cancellationToken);
                 cursor = page.NextCursor;

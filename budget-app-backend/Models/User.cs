@@ -25,6 +25,15 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     
+    [MaxLength(50)]
+    public string? AiProvider { get; set; } // e.g. "ollama", "openai", "anthropic"
+    
+    [MaxLength(50)]
+    public string? AiModel { get; set; } // e.g. "mistral:7b", "gpt-4o-mini", "claude-3-5-haiku-20241022"
+    
+    [MaxLength(500)]
+    public string? AiApiKey { get; set; } // Encrypted API key
+    
     // Navigation properties
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 }

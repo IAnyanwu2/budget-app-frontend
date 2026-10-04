@@ -468,24 +468,3 @@ html[data-theme='light'] .settings-page .profile-display .info-row span {
   color: #172522 !important;
 }
 
-html[data-theme='light'] .sidebar .budget-editor {
-  background: #f4f8f6;
-  border-color: #d3e0da;
-}
-
-html[data-theme='light'] .sidebar .budget-editor input {
-  background: #ffffff;
-  border-color: #c4d3cc;
-  color: #172522;
-}
-
-html[data-theme='light'] .sidebar .budget-editor input::placeholder {
-  color: #667770;
-}
-
-html[data-theme='light'] .sidebar .budget-editor .add-cat-btn,
-html[data-theme='light'] .sidebar .budget-editor .close-cat-btn {
-  background: #e4ede8;
-  color: #31473f;
-}
-

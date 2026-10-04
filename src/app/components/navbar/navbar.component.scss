@@ -482,3 +482,27 @@
   .sidebar-footer { display: none; }
   .collapse-btn { display: none; }
 }
+
+:host-context(html[data-theme='light']) {
+  .budget-editor {
+    background: #f4f8f6;
+    border-color: #d3e0da;
+
+    input {
+      background: #ffffff;
+      border-color: #c4d3cc;
+      color: #172522;
+
+      &::placeholder {
+        color: #667770;
+      }
+    }
+
+    .add-cat-btn,
+    .save-cat-btn,
+    .close-cat-btn {
+      background: #e4ede8;
+      color: #31473f;
+    }
+  }
+}

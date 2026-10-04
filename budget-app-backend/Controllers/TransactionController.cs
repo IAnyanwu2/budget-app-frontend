@@ -18,12 +18,12 @@ public class TransactionController : ControllerBase
     }
 
     [HttpGet("summary")]
-    public async Task<IActionResult> GetBudgetSummary(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetBudgetSummary([FromQuery] string? dateRange, CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId)) return Unauthorized();
 
-        var month = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
-        var transactions = await GetUserTransactions(userId, month, month.AddMonths(1), cancellationToken);
+        GetDateRange(dateRange, out var start, out var end);
+        var transactions = await GetUserTransactions(userId, start, end, cancellationToken);
         var income = transactions.Where(transaction => transaction.Amount > 0).Sum(transaction => transaction.Amount);
         var expenses = -transactions.Where(transaction => transaction.Amount < 0).Sum(transaction => transaction.Amount);
 
@@ -52,12 +52,12 @@ public class TransactionController : ControllerBase
     }
 
     [HttpGet("category-breakdown")]
-    public async Task<IActionResult> GetCategoryBreakdown(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetCategoryBreakdown([FromQuery] string? dateRange, CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId)) return Unauthorized();
 
-        var month = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
-        var transactions = await GetUserTransactions(userId, month, month.AddMonths(1), cancellationToken);
+        GetDateRange(dateRange, out var start, out var end);
+        var transactions = await GetUserTransactions(userId, start, end, cancellationToken);
         var expenses = transactions.Where(transaction => transaction.Amount < 0).ToArray();
         var total = -expenses.Sum(transaction => transaction.Amount);
         var breakdown = expenses
@@ -185,6 +185,28 @@ public class TransactionController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return int.TryParse(userIdClaim, out userId);
+    }
+
+    private void GetDateRange(string? dateRange, out DateTime start, out DateTime end)
+    {
+        end = DateTime.UtcNow;
+        switch (dateRange?.ToLowerInvariant())
+        {
+            case "current_month":
+                start = new DateTime(end.Year, end.Month, 1);
+                end = start.AddMonths(1);
+                break;
+            case "past_6_months":
+                start = end.AddMonths(-6);
+                break;
+            case "past_12_months":
+                start = end.AddMonths(-12);
+                break;
+            case "last_30_days":
+            default:
+                start = end.AddDays(-30);
+                break;
+        }
     }
 
     private sealed record TransactionRow(string Id, string Description, decimal Amount, string Category, DateTime Date);

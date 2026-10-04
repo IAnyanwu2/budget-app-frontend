@@ -18,14 +18,22 @@ public sealed class PlaidApiClient
 
     public async Task<string> CreateLinkTokenAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var response = await PostAsync("/link/token/create", new Dictionary<string, object?>
+        var requestDict = new Dictionary<string, object?>
         {
             ["client_name"] = _configuration["Plaid:ClientName"] ?? "Saavy",
             ["country_codes"] = new[] { "US" },
             ["language"] = "en",
             ["products"] = new[] { "transactions" },
             ["user"] = new Dictionary<string, string> { ["client_user_id"] = userId.ToString() }
-        }, cancellationToken);
+        };
+
+        var webhookUrl = _configuration["Plaid:WebhookUrl"];
+        if (!string.IsNullOrWhiteSpace(webhookUrl))
+        {
+            requestDict["webhook"] = webhookUrl;
+        }
+
+        var response = await PostAsync("/link/token/create", requestDict, cancellationToken);
 
         return RequiredString(response.RootElement, "link_token");
     }
@@ -62,6 +70,24 @@ public sealed class PlaidApiClient
             ReadRemoved(root),
             RequiredString(root, "next_cursor"),
             root.TryGetProperty("has_more", out var hasMore) && hasMore.GetBoolean());
+    }
+
+    public async Task FireSandboxWebhookAsync(string accessToken, CancellationToken cancellationToken = default)
+    {
+        await PostAsync("/sandbox/item/fire_webhook", new Dictionary<string, object?>
+        {
+            ["access_token"] = accessToken,
+            ["webhook_code"] = "SYNC_UPDATES_AVAILABLE"
+        }, cancellationToken);
+    }
+
+    public async Task CreateSandboxTransactionAsync(string accessToken, int count = 5, CancellationToken cancellationToken = default)
+    {
+        await PostAsync("/sandbox/transactions/create", new Dictionary<string, object?>
+        {
+            ["access_token"] = accessToken,
+            ["count"] = count
+        }, cancellationToken);
     }
 
     private async Task<JsonDocument> PostAsync(string path, Dictionary<string, object?> request, CancellationToken cancellationToken)

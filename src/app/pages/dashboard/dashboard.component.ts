@@ -22,6 +22,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   @ViewChild(AiInsightsComponent) aiInsights?: AiInsightsComponent;
   
   summary: TransactionSummary | null = null;
+  selectedDateRange: string = 'current_month';
   error: string | null = null;
   loading = false;
   refreshing = false;
@@ -51,7 +52,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   loadSummary() {
     this.error = null;
     this.summary = null;
-    this.transactionService.getSummary().subscribe({
+    this.transactionService.getSummary(this.selectedDateRange).subscribe({
       next: (data) => {
         this.summary = data;
         this.cdr.detectChanges(); // Force change detection
@@ -70,6 +71,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       },
       error: (err) => console.error('Failed to load recent transactions:', err)
     });
+  }
+
+  onDateRangeChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    this.selectedDateRange = select.value;
+    this.loadSummary();
   }
 
   private loadChartData() {
@@ -223,6 +230,35 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       this.refreshing = false;
       this.loadSummary();
       this.aiInsights?.generateInsights();
+    }
+  }
+
+  async testWebhook() {
+    this.connectionMessage = 'Firing webhook...';
+    try {
+      await this.plaidLinkService.testWebhook();
+      this.connectionMessage = 'Webhook fired! Your backend received the ping successfully.';
+    } catch (error) {
+      this.connectionMessage = error instanceof Error ? error.message : 'Could not trigger test webhook.';
+    }
+  }
+
+  simulatingTx = false;
+  async simulateTransaction() {
+    this.simulatingTx = true;
+    this.connectionMessage = 'Simulating custom transactions via Plaid...';
+    try {
+      const result = await this.plaidLinkService.simulateTransaction(5);
+      this.connectionMessage = result.message || 'Custom transactions generated. The webhook should trigger a sync shortly.';
+      
+      // Plaid webhook takes a few seconds to fire
+      setTimeout(() => {
+         this.refresh();
+      }, 4000);
+    } catch (error) {
+      this.connectionMessage = error instanceof Error ? error.message : 'Failed to simulate transaction. Make sure the linked account was created with the user_transactions_dynamic test credentials.';
+    } finally {
+      this.simulatingTx = false;
     }
   }
 

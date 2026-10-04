@@ -12,16 +12,18 @@ export class TransactionService {
 
   constructor(private http: HttpClient) {}
 
-  getSummary(): Observable<TransactionSummary> {
-    return this.http.get<TransactionSummary>(`${this.apiUrl}/transactions/summary`);
+  getSummary(dateRange?: string): Observable<TransactionSummary> {
+    const url = dateRange ? `${this.apiUrl}/transactions/summary?dateRange=${dateRange}` : `${this.apiUrl}/transactions/summary`;
+    return this.http.get<TransactionSummary>(url);
   }
 
   getRecentTransactions(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/transactions/recent`);
   }
 
-  getCategoryBreakdown(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/transactions/category-breakdown`);
+  getCategoryBreakdown(dateRange?: string): Observable<any[]> {
+    const url = dateRange ? `${this.apiUrl}/transactions/category-breakdown?dateRange=${dateRange}` : `${this.apiUrl}/transactions/category-breakdown`;
+    return this.http.get<any[]>(url);
   }
 
   getSpendingTrend(year?: number): Observable<any[]> {

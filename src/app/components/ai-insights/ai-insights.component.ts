@@ -18,6 +18,7 @@ export class AiInsightsComponent implements OnInit {
   budgetGoalNum?: number;
   progressPercent?: number;
   alertMessage?: string;
+  toastMessage?: string;
 
   constructor(
     private aiInsightsService: AiInsightsService,
@@ -70,7 +71,13 @@ export class AiInsightsComponent implements OnInit {
       error: (error) => {
         console.error('Error generating insights:', error);
         this.loading = false;
+        this.showToast('Failed to generate AI insights. Check your AI settings or model connection.');
       }
     });
+  }
+
+  showToast(message: string) {
+    this.toastMessage = message;
+    setTimeout(() => this.toastMessage = undefined, 5000);
   }
 }

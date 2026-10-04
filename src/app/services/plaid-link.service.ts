@@ -79,6 +79,18 @@ export class PlaidLinkService {
     return syncResults.reduce((total, item) => total + item.added, 0);
   }
 
+  async testWebhook(): Promise<any> {
+    return await firstValueFrom(
+      this.http.post(`${environment.apiBaseUrl}/plaid/test-webhook`, {})
+    );
+  }
+
+  async simulateTransaction(count: number = 5): Promise<any> {
+    return await firstValueFrom(
+      this.http.post(`${environment.apiBaseUrl}/plaid/sandbox-create-tx?count=${count}`, {})
+    );
+  }
+
   private async loadSdk(): Promise<PlaidLinkSdk> {
     const browserWindow = this.document.defaultView as PlaidWindow | null;
     if (!browserWindow) {
