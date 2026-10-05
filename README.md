@@ -93,13 +93,3 @@ Build for production
    npm run build -- --configuration production
 
 2. Serve the `dist/` output using any static server or integrate into your backend.
-
-Committing & pushing
-
-Run these commands to commit and push your changes (you must have the remote configured and credentials):
-
-   git add .
-   git commit -m "Add inline Tools category editor and README"
-   git push origin main
-
-If your default branch is `master` or another name, replace `main` with that branch.
